@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult, AppMode, Platform, TrendItem } from "../types";
 import { SYSTEM_INSTRUCTION, MODE_PROMPTS, BRAND_GUARD_INSTRUCTION } from "../constants";
@@ -87,13 +86,10 @@ export const analyzeContent = async (
     demographics?: string;
     brandGuidelines?: string;
     niche?: string; // For Trend Hunter
-  },
-  apiKey: string
+  }
 ): Promise<AnalysisResult | TrendItem[]> => {
   try {
-    if (!apiKey) throw new Error("API Key is missing.");
-
-    const ai = new GoogleGenAI({ apiKey: apiKey });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     const currentDate = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
 

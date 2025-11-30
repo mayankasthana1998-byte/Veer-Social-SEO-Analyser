@@ -5,12 +5,12 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
   // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
-  const env = loadEnv(mode, '.', '');
+  const env = loadEnv(mode, (process as any).cwd(), '');
   return {
     plugins: [react()],
-    base: '/', // Ensure absolute path for routing
+    base: '/', 
     define: {
-      // This ensures process.env.API_KEY in your code is replaced with the actual key from Vercel settings
+      // This ensures process.env.API_KEY in your code is replaced with the actual key from Netlify/Vercel settings
       'process.env.API_KEY': JSON.stringify(env.API_KEY)
     }
   };

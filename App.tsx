@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AppMode, Platform, AnalysisResult, FileInput, TrendItem } from './types';
 import { analyzeContent } from './services/geminiService';
@@ -8,7 +7,6 @@ import MasterclassGuide from './components/MasterclassGuide';
 import { 
   Sparkles, 
   BrainCircuit, 
-  Users, 
   ArrowRight, 
   Loader2, 
   Settings2,
@@ -16,10 +14,7 @@ import {
   Linkedin,
   Youtube,
   Music2,
-  MapPin,
-  Languages,
   Target,
-  UserCheck,
   Zap,
   Cpu,
   Flame,
@@ -27,11 +22,6 @@ import {
   Facebook,
   Search,
   ShieldCheck,
-  FileText,
-  Key,
-  Lock,
-  Radio,
-  Globe,
   BookOpen
 } from 'lucide-react';
 
@@ -49,10 +39,6 @@ interface ConfigState {
 }
 
 const App: React.FC = () => {
-  const [apiKey, setApiKey] = useState<string>('');
-  const [showGatekeeper, setShowGatekeeper] = useState<boolean>(true);
-  const [tempKey, setTempKey] = useState<string>('');
-
   const [mode, setMode] = useState<AppMode>(AppMode.GENERATION);
   const [platform, setPlatform] = useState<Platform>(Platform.INSTAGRAM);
   const [files, setFiles] = useState<FileInput[]>([]);
@@ -78,29 +64,6 @@ const App: React.FC = () => {
     brandGuidelines: '',
     niche: ''
   });
-
-  useEffect(() => {
-    const storedKey = localStorage.getItem('gemini_api_key');
-    const envKey = process.env.API_KEY;
-
-    if (envKey && envKey.length > 0 && !envKey.includes("VITE_")) {
-       setApiKey(envKey);
-       setShowGatekeeper(false);
-    } else if (storedKey && storedKey.startsWith('AIza')) {
-       setApiKey(storedKey);
-       setShowGatekeeper(false);
-    }
-  }, []);
-
-  const handleSaveKey = () => {
-    if (!tempKey.startsWith('AIza')) {
-      alert('Invalid Key format. It must start with AIza.');
-      return;
-    }
-    localStorage.setItem('gemini_api_key', tempKey);
-    setApiKey(tempKey);
-    setShowGatekeeper(false);
-  };
 
   useEffect(() => {
     let interval: any;
@@ -150,7 +113,7 @@ const App: React.FC = () => {
 
     try {
       const filesToAnalyze = files.map(f => f.file);
-      const data = await analyzeContent(filesToAnalyze, mode, platform, config, apiKey);
+      const data = await analyzeContent(filesToAnalyze, mode, platform, config);
       
       if (mode === AppMode.TREND_HUNTER) {
         setTrendResults(data as TrendItem[]);
@@ -193,56 +156,6 @@ const App: React.FC = () => {
     </button>
   );
 
-  // --- GATEKEEPER (LOGIN) ---
-  if (showGatekeeper) {
-    return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 relative overflow-hidden font-inter">
-         <div className="aurora-blob w-[500px] h-[500px] bg-indigo-600/30 rounded-full top-0 left-0"></div>
-         <div className="aurora-blob w-[400px] h-[400px] bg-purple-600/30 rounded-full bottom-0 right-0 animation-delay-2000"></div>
-         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150"></div>
-
-         <div className="w-full max-w-md bg-black/40 backdrop-blur-2xl border border-slate-800 rounded-[2.5rem] p-10 shadow-2xl relative z-10">
-            <div className="text-center mb-10">
-               <div className="w-20 h-20 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_40px_-10px_rgba(99,102,241,0.6)] rotate-3">
-                  <Sparkles className="w-10 h-10 text-white" />
-               </div>
-               <h1 className="text-3xl font-black text-white tracking-tighter mb-2">SocialSEO AI</h1>
-               <p className="text-indigo-400 text-xs font-bold tracking-[0.2em] uppercase">Andromeda Engine v3.0</p>
-            </div>
-
-            <div className="space-y-6">
-               <div className="space-y-3">
-                  <label className="text-xs font-bold text-slate-500 uppercase ml-2 flex items-center gap-2">
-                    <Lock className="w-3 h-3" /> Security Clearance Key
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition-opacity"></div>
-                    <div className="relative bg-black rounded-2xl p-0.5">
-                       <Key className="absolute top-4 left-4 w-5 h-5 text-slate-500" />
-                       <input 
-                         type="password"
-                         placeholder="Paste AIza key..."
-                         className="w-full bg-slate-900/80 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-slate-600 focus:outline-none focus:bg-slate-900 transition-all font-mono text-sm"
-                         value={tempKey}
-                         onChange={(e) => setTempKey(e.target.value)}
-                       />
-                    </div>
-                  </div>
-               </div>
-
-               <button 
-                 onClick={handleSaveKey}
-                 className="w-full bg-white hover:bg-indigo-50 text-black font-black py-4 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center group"
-               >
-                 INITIALIZE SYSTEM
-                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-               </button>
-            </div>
-         </div>
-      </div>
-    );
-  }
-
   // --- MAIN APP ---
   return (
     <div className="min-h-screen text-slate-200 pb-20 selection:bg-indigo-500/30">
@@ -278,12 +191,6 @@ const App: React.FC = () => {
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">System Online</span>
              </div>
-             <button 
-               onClick={() => { localStorage.removeItem('gemini_api_key'); setShowGatekeeper(true); setApiKey(''); }}
-               className="text-xs font-bold text-slate-500 hover:text-white transition-colors"
-             >
-               LOGOUT
-             </button>
           </div>
         </header>
       </div>
