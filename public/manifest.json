@@ -1,0 +1,22 @@
+{
+  "short_name": "Veer SEO",
+  "name": "Veer Social SEO Analyser",
+  "description": "Advanced social media algorithmic architect for generating viral metadata and competitor analysis.",
+  "icons": [
+    {
+      "src": "/icons/pwa-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icons/pwa-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#4f46e5",
+  "background_color": "#050505",
+  "orientation": "portrait"
+}
