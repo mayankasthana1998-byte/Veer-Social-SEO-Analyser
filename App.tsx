@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AppMode, Platform, AnalysisResult, FileInput, TrendItem } from './types';
 import { analyzeContent } from './services/geminiService';
@@ -22,7 +23,9 @@ import {
   Facebook,
   Search,
   ShieldCheck,
-  BookOpen
+  BookOpen,
+  Eye,
+  Crosshair
 } from 'lucide-react';
 
 interface ConfigState {
@@ -51,6 +54,28 @@ const App: React.FC = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [showMasterclass, setShowMasterclass] = useState(false);
+
+  // Check for API Key on mount
+  const [hasApiKey, setHasApiKey] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState('');
+
+  useEffect(() => {
+    // Check local storage or process.env
+    const storedKey = localStorage.getItem('GEMINI_API_KEY');
+    if (storedKey || process.env.API_KEY) {
+      setHasApiKey(true);
+    }
+  }, []);
+
+  const handleSaveKey = () => {
+    if (!apiKeyInput.startsWith('AIza')) {
+      alert('Invalid Key format. It must start with AIza.');
+      return;
+    }
+    localStorage.setItem('GEMINI_API_KEY', apiKeyInput);
+    // Reload to apply
+    window.location.reload();
+  };
 
   const [config, setConfig] = useState<ConfigState>({
     goal: 'Viral Growth',
@@ -105,14 +130,19 @@ const App: React.FC = () => {
     if (mode === AppMode.GENERATION && files.length === 0) { alert("Upload content first, boss."); return; }
     if (mode === AppMode.REFINE && !config.originalText) { alert("Need some text to cook."); return; }
     if (mode === AppMode.TREND_HUNTER && !config.niche) { alert("What niche are we hunting?"); return; }
+    if (mode === AppMode.COMPETITOR_SPY && files.length < 2) { alert("Spy Mode needs at least 2 competitor screenshots/videos to find patterns."); return; }
 
     setIsAnalyzing(true);
     setError(null);
     setResult(null);
     setTrendResults(null);
 
+    // Retrieve API Key
+    const finalApiKey = localStorage.getItem('GEMINI_API_KEY') || process.env.API_KEY || '';
+
     try {
       const filesToAnalyze = files.map(f => f.file);
+      
       const data = await analyzeContent(filesToAnalyze, mode, platform, config);
       
       if (mode === AppMode.TREND_HUNTER) {
@@ -140,7 +170,7 @@ const App: React.FC = () => {
 
   const ModeButton = ({ m, icon: Icon, label, desc }: { m: AppMode, icon: any, label: string, desc: string }) => (
     <button
-      onClick={() => { setMode(m); setResult(null); setTrendResults(null); if(m !== AppMode.TREND_HUNTER) setFiles([]); }}
+      onClick={() => { setMode(m); setResult(null); setTrendResults(null); if(m !== AppMode.TREND_HUNTER) setFiles([]); setConfig({...config, originalText: ''}); }}
       className={`relative p-4 rounded-3xl transition-all duration-300 w-full text-left overflow-hidden group ${
         mode === m 
           ? 'bg-indigo-600 text-white shadow-[0_0_40px_-10px_rgba(79,70,229,0.5)] scale-[1.02]' 
@@ -155,6 +185,48 @@ const App: React.FC = () => {
       <span className="text-[10px] uppercase font-bold tracking-widest opacity-60">{desc}</span>
     </button>
   );
+
+  // --- API GATEKEEPER ---
+  if (!hasApiKey) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-noise"></div>
+        <div className="aurora-blob w-[500px] h-[500px] bg-indigo-600/20"></div>
+        
+        <div className="relative z-10 max-w-md w-full bg-slate-900/50 backdrop-blur-2xl border border-white/10 p-8 rounded-[2.5rem] shadow-2xl">
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-[0_0_30px_-5px_rgba(99,102,241,0.5)]">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
+          </div>
+          <h1 className="text-3xl font-black text-center text-white mb-2 tracking-tight">SocialSEO AI</h1>
+          <p className="text-slate-400 text-center text-sm mb-8 font-medium">Enter your Neural Key to initialize the Andromeda Engine.</p>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2 mb-1 block">Google AI Studio Key</label>
+              <input 
+                type="password" 
+                value={apiKeyInput}
+                onChange={(e) => setApiKeyInput(e.target.value)}
+                placeholder="AIza..."
+                className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-indigo-500 transition-colors font-mono text-sm"
+              />
+            </div>
+            <button 
+              onClick={handleSaveKey}
+              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl transition-all hover:scale-[1.02] shadow-lg shadow-indigo-600/20"
+            >
+              INITIALIZE SYSTEM
+            </button>
+            <p className="text-[10px] text-center text-slate-600 mt-4">
+              Don't have a key? <a href="https://aistudio.google.com/" target="_blank" className="text-indigo-400 hover:underline">Get one here</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // --- MAIN APP ---
   return (
@@ -297,191 +369,157 @@ const App: React.FC = () => {
                     <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
                     <input 
                       type="text"
-                      className="relative w-full bg-slate-900 border border-orange-500/30 rounded-2xl py-4 pl-10 pr-4 text-white focus:outline-none focus:border-orange-500 font-bold"
-                      placeholder="e.g. AI News, Vegan Food..."
+                      className="relative w-full bg-slate-900 border border-orange-500/30 rounded-2xl py-4 pl-10 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 transition-colors"
+                      placeholder="e.g. AI Tech, Vegan Food, Crypto..."
                       value={config.niche}
                       onChange={(e) => setConfig({...config, niche: e.target.value})}
                     />
-                    <Search className="absolute top-4 left-3 w-5 h-5 text-orange-500" />
+                    <Search className="absolute left-3 top-4 w-5 h-5 text-orange-500" />
                  </div>
               </div>
             )}
 
-            {mode === AppMode.GENERATION && (
-              <div className="space-y-4 pt-2">
-                <div className="grid grid-cols-2 gap-3">
-                   <select 
-                     value={config.goal}
-                     onChange={(e) => setConfig({...config, goal: e.target.value})}
-                     className="bg-black/20 border border-white/5 rounded-xl p-2 text-xs text-slate-300 focus:ring-1 focus:ring-indigo-500 outline-none"
-                   >
-                     <option>Viral Growth</option>
-                     <option>Sales</option>
-                     <option>Community</option>
-                   </select>
-                   <select 
-                     value={config.style}
-                     onChange={(e) => setConfig({...config, style: e.target.value})}
-                     className="bg-black/20 border border-white/5 rounded-xl p-2 text-xs text-slate-300 focus:ring-1 focus:ring-indigo-500 outline-none"
-                   >
-                     <option>Authentic</option>
-                     <option>Polished</option>
-                     <option>Hype</option>
-                   </select>
-                </div>
-                <FileUpload files={files} setFiles={setFiles} />
+            {mode === AppMode.REFINE && (
+              <div className="pt-2 animate-fade-in">
+                <label className="text-[10px] font-black text-slate-500 uppercase mb-3 block tracking-wider">Rough Draft</label>
+                <textarea 
+                  className="w-full h-32 bg-black/20 border border-white/5 rounded-2xl p-4 text-sm text-white focus:ring-1 focus:ring-indigo-500 outline-none resize-none"
+                  placeholder="Paste your messy thoughts here..."
+                  value={config.originalText}
+                  onChange={(e) => setConfig({...config, originalText: e.target.value})}
+                />
               </div>
             )}
-
-            {mode === AppMode.REFINE && (
-               <div className="space-y-4">
-                 <textarea 
-                   className="w-full h-24 bg-black/20 border border-white/5 rounded-xl p-3 text-sm text-white focus:ring-1 focus:ring-indigo-500 outline-none resize-none"
-                   placeholder="Paste draft..."
-                   value={config.originalText}
-                   onChange={(e) => setConfig({...config, originalText: e.target.value})}
-                 />
-                 <input 
-                   type="text"
-                   placeholder="SEO Keywords..."
-                   className="w-full bg-black/20 border border-white/5 rounded-xl p-3 text-sm text-white focus:ring-1 focus:ring-indigo-500 outline-none"
-                   value={config.keywords}
-                   onChange={(e) => setConfig({...config, keywords: e.target.value})}
-                 />
-                 <FileUpload files={files} setFiles={setFiles} />
-               </div>
-            )}
-
+            
+            {/* SPY MODE INPUTS */}
             {mode === AppMode.COMPETITOR_SPY && (
-               <FileUpload files={files} setFiles={setFiles} multiple={true} />
+              <div className="pt-2 animate-fade-in space-y-4">
+                 <div className="p-4 bg-indigo-900/20 border border-indigo-500/20 rounded-2xl">
+                    <h4 className="text-xs font-bold text-indigo-300 mb-2 flex items-center">
+                       <Crosshair className="w-3 h-3 mr-2" />
+                       Step 1: The Captions
+                    </h4>
+                    <p className="text-[10px] text-slate-400 mb-3">
+                       Paste the captions used by your competitors here. The AI will cross-reference these with the visual screenshots below.
+                    </p>
+                    <textarea 
+                      className="w-full h-24 bg-black/40 border border-indigo-500/30 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-indigo-400 font-mono"
+                      placeholder="// Paste competitor captions..."
+                      value={config.originalText}
+                      onChange={(e) => setConfig({...config, originalText: e.target.value})}
+                    />
+                 </div>
+                 
+                 <div>
+                    <h4 className="text-xs font-bold text-indigo-300 mb-2 flex items-center">
+                       <Eye className="w-3 h-3 mr-2" />
+                       Step 2: The Visuals
+                    </h4>
+                    <p className="text-[10px] text-slate-400 mb-2">Upload 6-7 screenshots/videos for pattern recognition.</p>
+                 </div>
+              </div>
             )}
-
           </div>
+        </div>
 
-          {/* MAIN ACTION BUTTON */}
-          <div className="relative group pt-2">
-            <div className={`absolute -inset-1 rounded-2xl blur opacity-30 group-hover:opacity-100 transition duration-500 animate-pulse ${
-               mode === AppMode.TREND_HUNTER ? 'bg-orange-600' : 'bg-indigo-600'
-            }`}></div>
+        {/* RIGHT: OUTPUT / UPLOAD */}
+        <div className="lg:col-span-7">
+          
+          {/* 1. UPLOAD AREA (Hidden in Refine/Trend modes) */}
+          {(mode === AppMode.GENERATION || mode === AppMode.COMPETITOR_SPY) && (
+             <div className="mb-6 animate-fade-in">
+               <FileUpload files={files} setFiles={setFiles} multiple={mode === AppMode.COMPETITOR_SPY} />
+             </div>
+          )}
+
+          {/* 2. MAIN ACTION BUTTON */}
+          <div className="relative group mb-8">
+            <div className={`absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl blur opacity-20 group-hover:opacity-60 transition duration-1000 ${isAnalyzing ? 'opacity-50 animate-pulse' : ''}`}></div>
             <button
               onClick={handleAnalyze}
               disabled={isAnalyzing}
-              className={`relative w-full py-5 rounded-2xl font-black text-lg tracking-tight text-white shadow-2xl transition-all hover:-translate-y-1 flex items-center justify-center overflow-hidden ${
-                isAnalyzing ? 'bg-slate-800 cursor-not-allowed' : 'bg-slate-900 border border-white/10'
-              }`}
+              className="relative w-full bg-slate-900 border border-white/10 hover:border-white/20 text-white font-black text-xl py-6 rounded-2xl transition-all hover:-translate-y-1 active:scale-[0.99] flex items-center justify-center gap-3 overflow-hidden"
             >
-              {/* Background gradient on hover */}
-              <div className={`absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity bg-gradient-to-r ${
-                 mode === AppMode.TREND_HUNTER ? 'from-orange-500 to-red-600' : 'from-indigo-600 to-purple-600'
-              }`}></div>
-              
               {isAnalyzing ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span className="font-mono text-sm">PROCESSING...</span>
-                </div>
+                 <>
+                   <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
+                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+                     SYSTEM PROCESSING...
+                   </span>
+                 </>
               ) : (
-                <div className="flex items-center gap-2 relative z-10">
-                  {mode === AppMode.TREND_HUNTER ? (
-                     <>
-                       <Flame className="w-5 h-5 text-orange-500" />
-                       HUNT TRENDS
-                     </>
-                  ) : (
-                     <>
-                       <Zap className="w-5 h-5 text-indigo-400" />
-                       COOK STRATEGY
-                     </>
-                  )}
-                </div>
+                 <>
+                   {mode === AppMode.TREND_HUNTER ? <Flame className="w-6 h-6 text-orange-500" /> : <Cpu className="w-6 h-6 text-indigo-500" />}
+                   <span>
+                     {mode === AppMode.GENERATION && "INITIALIZE GENERATION"}
+                     {mode === AppMode.REFINE && "OPTIMIZE DRAFT"}
+                     {mode === AppMode.COMPETITOR_SPY && "DECODE COMPETITORS"}
+                     {mode === AppMode.TREND_HUNTER && "HUNT VIRAL TOPICS"}
+                   </span>
+                 </>
               )}
             </button>
           </div>
 
+          {/* 3. ERROR & LOADING */}
           {error && (
-            <div className="p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-400 text-xs font-bold text-center">
-              {error}
+            <div className="mb-8 p-4 bg-red-500/10 border border-red-500/50 rounded-2xl text-red-200 text-sm text-center font-bold animate-shake flex items-center justify-center gap-2">
+               <span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+               {error}
             </div>
           )}
-        </div>
 
-        {/* RIGHT: OUTPUT */}
-        <div className="lg:col-span-7">
-          {isAnalyzing ? (
-            <div className="h-full min-h-[500px] border border-slate-800 bg-black/40 rounded-[2.5rem] flex flex-col items-center justify-center p-12 backdrop-blur-md relative overflow-hidden">
-               {/* Cyber Grid Background */}
-               <div className="absolute inset-0 bg-[linear-gradient(rgba(79,70,229,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(79,70,229,0.1)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_100%)]"></div>
-               
-               <div className="relative z-10 w-full max-w-sm text-center">
-                  <div className="relative w-24 h-24 mx-auto mb-8">
-                     <div className="absolute inset-0 border-4 border-indigo-500/30 rounded-full animate-[spin_3s_linear_infinite]"></div>
-                     <div className="absolute inset-2 border-4 border-t-purple-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-[spin_2s_linear_infinite_reverse]"></div>
-                     <div className="absolute inset-0 flex items-center justify-center">
-                        <Cpu className="w-8 h-8 text-white animate-pulse" />
-                     </div>
-                  </div>
-
-                  <h3 className="text-2xl font-black text-white tracking-tight mb-2">SYSTEM ACTIVE</h3>
-                  <div className="flex items-center justify-between text-[10px] font-mono text-indigo-400 mb-2 px-1">
-                     <span>{loadingMessage}</span>
-                     <span>{Math.round(loadingProgress)}%</span>
-                  </div>
-                  
-                  <div className="h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
-                     <div 
-                       className="h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.8)] transition-all duration-300 ease-linear"
-                       style={{ width: `${loadingProgress}%` }}
-                     ></div>
-                  </div>
-               </div>
-            </div>
-          ) : result ? (
-            <AnalysisResultView result={result} mode={mode} />
-          ) : trendResults ? (
-            <div className="space-y-4 animate-fade-in">
-              <div className="bg-orange-500/10 border border-orange-500/30 p-6 rounded-[2rem]">
-                 <h2 className="text-2xl font-black text-white flex items-center">
-                   <Flame className="w-6 h-6 mr-3 text-orange-500" />
-                   TRENDS FOUND: {config.niche}
-                 </h2>
+          {isAnalyzing && (
+            <div className="mb-8 bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-md">
+              <div className="flex justify-between text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">
+                <span>System Status</span>
+                <span>{Math.round(loadingProgress)}%</span>
               </div>
-              <div className="grid gap-4">
-                {trendResults.map((trend, idx) => (
-                  <div key={idx} className="bg-slate-900/60 border border-slate-800 hover:border-orange-500/50 p-6 rounded-3xl group transition-all hover:-translate-y-1">
-                    <div className="flex justify-between items-start">
-                       <div className="flex-1">
-                          <h3 className="text-lg font-bold text-white mb-2 group-hover:text-orange-400 transition-colors">{trend.headline}</h3>
-                          <p className="text-xs text-slate-400 mb-3">{trend.whyItsHot}</p>
-                          <div className="p-3 bg-black/40 rounded-xl border border-white/5">
-                             <p className="text-xs text-orange-200 font-mono">💡 {trend.contentIdea}</p>
-                          </div>
-                       </div>
-                       <button 
-                         onClick={() => handleUseTrend(trend)}
-                         className="ml-4 p-3 bg-white/5 hover:bg-orange-500 text-white rounded-xl transition-all"
-                       >
-                         <ArrowRight className="w-5 h-5" />
-                       </button>
-                    </div>
-                  </div>
-                ))}
+              <div className="h-2 bg-slate-800 rounded-full overflow-hidden mb-4">
+                <div 
+                  className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-300 ease-out relative"
+                  style={{ width: `${loadingProgress}%` }}
+                >
+                   <div className="absolute inset-0 bg-white/20 animate-[shimmer_1s_infinite]"></div>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="h-full min-h-[400px] border border-dashed border-slate-800 bg-slate-900/20 rounded-[2.5rem] flex flex-col items-center justify-center p-8">
-              <div className={`w-24 h-24 rounded-3xl flex items-center justify-center mb-6 transition-all ${
-                 mode === AppMode.TREND_HUNTER ? 'bg-orange-500/10 rotate-3' : 'bg-indigo-500/10 -rotate-3'
-              }`}>
-                {mode === AppMode.TREND_HUNTER ? <Flame className="w-10 h-10 text-orange-500" /> : <BrainCircuit className="w-10 h-10 text-indigo-500" />}
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">Awaiting Input</h3>
-              <p className="text-slate-500 text-sm max-w-xs text-center">
-                 Select a mode on the left to initialize the Andromeda Engine.
+              <p className="text-center text-sm font-mono text-indigo-300 animate-pulse">
+                {">"} {loadingMessage}
               </p>
             </div>
           )}
-        </div>
 
+          {/* 4. RESULTS */}
+          {result && <AnalysisResultView result={result} mode={mode} />}
+
+          {/* 5. TREND RESULTS */}
+          {trendResults && (
+             <div className="space-y-4 animate-fade-in">
+               <h3 className="text-xl font-black text-white flex items-center gap-2 mb-4">
+                  <Flame className="text-orange-500" /> LIVE TREND DATABASE
+               </h3>
+               {trendResults.map((trend, i) => (
+                  <div key={i} className="bg-slate-900/60 border border-slate-800 hover:border-orange-500/30 p-6 rounded-3xl group transition-all">
+                     <div className="flex justify-between items-start mb-4">
+                        <h4 className="text-lg font-black text-white">{trend.headline}</h4>
+                        <span className="text-[10px] font-bold bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full border border-orange-500/20">HOT</span>
+                     </div>
+                     <p className="text-sm text-slate-400 mb-4">{trend.whyItsHot}</p>
+                     <div className="bg-black/30 p-4 rounded-xl border border-white/5 mb-4">
+                        <p className="text-xs text-slate-300 font-mono">💡 {trend.contentIdea}</p>
+                     </div>
+                     <button 
+                       onClick={() => handleUseTrend(trend)}
+                       className="w-full py-3 bg-orange-600/10 hover:bg-orange-600 text-orange-500 hover:text-white font-bold rounded-xl transition-all text-xs uppercase tracking-wider"
+                     >
+                        USE THIS TREND
+                     </button>
+                  </div>
+               ))}
+             </div>
+          )}
+
+        </div>
       </main>
     </div>
   );

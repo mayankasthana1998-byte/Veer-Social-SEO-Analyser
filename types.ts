@@ -25,6 +25,13 @@ export enum HookType {
   AUTHORITY = 'Authority',
 }
 
+export interface CompetitorRow {
+  keywords: string[];
+  hookUsed: string;
+  whyItWins: string;
+  rankingStrategy: string;
+}
+
 export interface AnalysisResult {
   visualAudit: {
     summary: string;
@@ -54,6 +61,7 @@ export interface AnalysisResult {
     visualTheme: string;
     ctaStrategy: string;
     formula: string;
+    spyMatrix?: CompetitorRow[]; // NEW: For the Chart Format
   }; 
 }
 

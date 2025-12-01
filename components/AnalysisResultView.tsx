@@ -1,6 +1,7 @@
+
 import React, { useRef, useEffect } from 'react';
 import { AnalysisResult, AppMode } from '../types';
-import { Copy, TrendingUp, Hash, Eye, MessageSquare, AlertTriangle, Flame, Share2, Download, Twitter, Linkedin, MessageCircle, Sparkles, Zap } from 'lucide-react';
+import { Copy, TrendingUp, Hash, Eye, MessageSquare, AlertTriangle, Flame, Share2, Download, Twitter, Linkedin, MessageCircle, Sparkles, Zap, Crosshair } from 'lucide-react';
 
 interface AnalysisResultViewProps {
   result: AnalysisResult;
@@ -24,7 +25,7 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode })
     return 'from-red-400 to-pink-600';
   };
 
-  const fullStrategyContent = `HEADLINE:\n${result.strategy.headline}\n\nCAPTION:\n${result.strategy.caption}\n\nCTA:\n${result.strategy.cta}\n\nHASHTAGS:\n${result.seo.hashtags.broad.join(' ')} ${result.seo.hashtags.niche.join(' ')}`;
+  const fullStrategyContent = `HEADLINE:\n${result.strategy.headline}\n\nCAPTION:\n${result.strategy.caption}\n\nCTA:\n${result.strategy.cta}\n\nHASHTAGS:\n${result.seo.hashtags?.broad?.join(' ')} ${result.seo.hashtags?.niche?.join(' ')}`;
 
   const handleSmartShare = async () => {
     if (navigator.share) {
@@ -58,7 +59,7 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode })
     URL.revokeObjectURL(url);
   };
 
-  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(result.strategy.headline + '\n\n' + result.strategy.caption.substring(0, 200) + '...')}`;
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(result.strategy.headline + '\n\n' + result.strategy.caption?.substring(0, 200) + '...')}`;
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(fullStrategyContent)}`;
   const linkedinUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(result.strategy.headline)}`;
 
@@ -112,8 +113,8 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode })
                  <h3 className="text-sm font-bold text-white">The Hook</h3>
               </div>
               <div className="space-y-2">
-                 <div className="text-lg font-bold text-slate-200">{result.visualAudit.hookIdentified}</div>
-                 <div className="text-xs text-slate-400">{result.visualAudit.psychologyCheck}</div>
+                 <div className="text-lg font-bold text-slate-200">{result.visualAudit?.hookIdentified}</div>
+                 <div className="text-xs text-slate-400">{result.visualAudit?.psychologyCheck}</div>
               </div>
            </div>
 
@@ -155,7 +156,48 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode })
         </div>
       </div>
 
-      {/* 2. THE STRATEGY - GLASS DOCUMENT STYLE */}
+      {/* 2. SPY MATRIX CHART (Only in Spy Mode) */}
+      {mode === AppMode.COMPETITOR_SPY && result.competitorInsights?.spyMatrix && (
+         <div className="md:col-span-12">
+            <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 overflow-hidden">
+               <h3 className="text-sm font-black uppercase tracking-widest text-indigo-400 mb-6 flex items-center">
+                 <Crosshair className="w-4 h-4 mr-2" /> Competitor Spy Matrix
+               </h3>
+               <div className="overflow-x-auto">
+                 <table className="w-full text-left border-collapse">
+                   <thead>
+                     <tr className="border-b border-slate-800 text-xs text-slate-500 uppercase tracking-wider">
+                       <th className="pb-4 pl-2 font-bold">Viral Pattern</th>
+                       <th className="pb-4 font-bold">Keywords Detected</th>
+                       <th className="pb-4 font-bold">Psych Trigger (Why)</th>
+                       <th className="pb-4 font-bold">Algo Hack (How)</th>
+                     </tr>
+                   </thead>
+                   <tbody className="text-sm">
+                     {result.competitorInsights.spyMatrix.map((row, i) => (
+                       <tr key={i} className="group hover:bg-white/5 transition-colors border-b border-slate-800/50 last:border-0">
+                         <td className="py-4 pl-2 font-bold text-white group-hover:text-indigo-300 align-top">
+                           {row.hookUsed}
+                         </td>
+                         <td className="py-4 text-slate-400 align-top">
+                           <div className="flex flex-wrap gap-1">
+                             {row.keywords.map((k, j) => (
+                               <span key={j} className="text-[10px] px-1.5 py-0.5 bg-black rounded border border-slate-800">{k}</span>
+                             ))}
+                           </div>
+                         </td>
+                         <td className="py-4 text-slate-300 pr-4 align-top">{row.whyItWins}</td>
+                         <td className="py-4 text-emerald-400 font-mono text-xs align-top">{row.rankingStrategy}</td>
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               </div>
+            </div>
+         </div>
+      )}
+
+      {/* 3. THE STRATEGY - GLASS DOCUMENT STYLE */}
       <div className="relative group">
         <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-[35px] blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
         <div className="relative bg-black/80 backdrop-blur-2xl border border-white/10 rounded-[32px] p-8 overflow-hidden">
@@ -233,7 +275,7 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode })
         </div>
       </div>
 
-      {/* 3. SEO CLOUD */}
+      {/* 4. SEO CLOUD */}
       <div ref={seoRef} className="bg-black/40 border border-slate-800/60 p-6 rounded-[32px]">
         <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4 flex items-center">
             <Hash className="w-3 h-3 mr-2" /> SEO Injection

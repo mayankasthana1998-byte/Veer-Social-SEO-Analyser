@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult, AppMode, Platform, TrendItem } from "../types";
 import { SYSTEM_INSTRUCTION, MODE_PROMPTS, BRAND_GUARD_INSTRUCTION } from "../constants";
@@ -79,13 +80,13 @@ export const analyzeContent = async (
     goal?: string; 
     style?: string; 
     keywords?: string; 
-    originalText?: string;
+    originalText?: string; // Used for Refine Draft OR Competitor Captions
     geography?: string;
     targetAudience?: string;
     targetLanguage?: string;
     demographics?: string;
     brandGuidelines?: string;
-    niche?: string; // For Trend Hunter
+    niche?: string; 
   }
 ): Promise<AnalysisResult | TrendItem[]> => {
   try {
@@ -121,7 +122,8 @@ export const analyzeContent = async (
       } else if (mode === AppMode.REFINE) {
         promptText += MODE_PROMPTS.REFINE(config.originalText || '', config.keywords || '', targeting);
       } else if (mode === AppMode.COMPETITOR_SPY) {
-        promptText += MODE_PROMPTS.COMPETITOR_SPY(files.length, targeting);
+        // Pass the originalText as "Competitor Captions"
+        promptText += MODE_PROMPTS.COMPETITOR_SPY(files.length, config.originalText || 'No captions provided', targeting);
       }
       
       // CRITICAL LANGUAGE INJECTION
@@ -156,15 +158,13 @@ export const analyzeContent = async (
       // thinkingConfig removed for stability
     };
 
-    // LOGIC: If Trend Hunter, we need Google Search.
-    // When Google Search is enabled, we cannot use responseSchema.
     const useSearch = mode === AppMode.TREND_HUNTER;
 
     if (useSearch) {
       generateConfig.tools = [{ googleSearch: {} }];
-      // NO responseSchema allowed with search tools in current version
+      // NO responseSchema allowed with search tools
     } else {
-      // Standard Schema for Generation/Refine/Spy without search
+      // Standard Schema
       generateConfig.responseMimeType = "application/json";
       generateConfig.responseSchema = {
         type: Type.OBJECT,
@@ -217,6 +217,18 @@ export const analyzeContent = async (
               visualTheme: { type: Type.STRING },
               ctaStrategy: { type: Type.STRING },
               formula: { type: Type.STRING },
+              spyMatrix: { 
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    keywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    hookUsed: { type: Type.STRING },
+                    whyItWins: { type: Type.STRING },
+                    rankingStrategy: { type: Type.STRING }
+                  }
+                }
+              }
             }
           }
         },
@@ -237,7 +249,6 @@ export const analyzeContent = async (
     const cleanText = cleanJson(resultText);
     const parsed = JSON.parse(cleanText);
 
-    // 6. Return based on Mode
     if (mode === AppMode.TREND_HUNTER) {
       if (parsed.trends && Array.isArray(parsed.trends)) {
         return parsed.trends as TrendItem[];
