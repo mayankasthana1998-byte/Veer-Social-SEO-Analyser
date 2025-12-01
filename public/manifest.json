@@ -1,25 +1,22 @@
 {
-  "background_color": "#ffffff",
+  "short_name": "Veer SEO",
+  "name": "Veer Social SEO Analyser",
   "description": "Advanced social media algorithmic architect for generating viral metadata and competitor analysis.",
-  "dir": "ltr",
-  "display": "standalone",
-  "name": "veer-social-seo-analyser-399148559156.us-west1.run",
-  "orientation": "any",
-  "scope": "/",
-  "short_name": "veer-social-seo-analyser-399148559156.us-west1.run",
-  "start_url": "/",
-  "theme_color": "#4f46e5",
   "icons": [
     {
-      "src": "https://veer-social-seo-analyser-399148559156.us-west1.run.app/icons/pwa-192x192.png",
-      "isSquare": false,
-      "isPng": true,
-      "isWebp": false,
-      "isJpg": false,
-      "width": 0,
-      "is512x512": false,
-      "is256x256": false,
-      "is192x192": false
+      "src": "/icons/pwa-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icons/pwa-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
     }
-  ]
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#4f46e5",
+  "background_color": "#050505",
+  "orientation": "portrait"
 }
