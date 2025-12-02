@@ -1,7 +1,7 @@
 
 import { HookType, Platform } from "./types";
 
-export const MAX_FILE_SIZE_MB = 10240;
+export const MAX_FILE_SIZE_MB = 1024; // 1 GB
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 export const SYSTEM_INSTRUCTION = `

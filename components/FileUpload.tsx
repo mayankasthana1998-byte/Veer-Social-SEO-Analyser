@@ -14,7 +14,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ files, setFiles, multiple = fal
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const formattedMaxSize = MAX_FILE_SIZE_MB >= 1024 
-    ? `${parseFloat((MAX_FILE_SIZE_MB / 1024).toFixed(2))}GB` 
+    ? `${(MAX_FILE_SIZE_MB / 1024).toFixed(0)}GB` 
     : `${MAX_FILE_SIZE_MB}MB`;
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
