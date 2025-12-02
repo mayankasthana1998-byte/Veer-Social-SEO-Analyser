@@ -141,9 +141,12 @@ export const MODE_PROMPTS = {
     1. **VISUAL AUDIT:** Look at the image/video. Identify the *feeling*. Is it fast? Slow? Sad? Hype? Match that energy in the writing.
     2. **THE HOOK:** Write a headline/overlay text that makes scrolling impossible. Use psychology (Curiosity Gap, Negativity Bias, or Specificity).
     3. **THE CAPTION:** Write the copy based on the Platform Strategy above.
-       - Use line breaks for readability.
-       - Use emojis strategically.
     4. **SEO:** Generate high-traffic keywords that fit the *intent* of the user.
+
+    **SCORING PROTOCOL (CRITICAL):**
+    - **'virality.baselineScore'**: Evaluate the user's RAW input (the uploaded image/video quality, topic appeal) on a scale of 0-100. Be honest but fair (usually 40-70 for unoptimized content).
+    - **'virality.score'**: Evaluate YOUR GENERATED STRATEGY on a scale of 0-100. Since you are an expert, this should be high (90-99).
+    - **'virality.gapAnalysis'**: Explain clearly why the Baseline was lower and how your strategy filled the gap to reach the high score.
 
     If Platform is Twitter (X): Structure the 'caption' as the first tweet of a Thread.
     
@@ -157,6 +160,12 @@ export const MODE_PROMPTS = {
     
     Action: Semantic Weaving. Insert high-volume keywords naturally without disrupting narrative flow.
     Maintain original meaning 100%. Polish grammar. Enhance readability score.
+
+    **SCORING PROTOCOL (CRITICAL):**
+    - **'virality.baselineScore'**: Rate the user's ORIGINAL DRAFT (0-100). Is it boring? Robotic? (Likely 30-60).
+    - **'virality.score'**: Rate YOUR REFINED VERSION (0-100). It should be a masterpiece (90-99).
+    - The output must explicitly show this improvement.
+
     Return a JSON object where the 'strategy.caption' is the refined text, and fill other fields based on analysis of the text.
   `,
   COMPETITOR_SPY: (count: number, captions: string, targeting: string) => `
@@ -180,6 +189,9 @@ export const MODE_PROMPTS = {
        - 'impactScore': An estimated integer score (0-100) representing the Viral Impact/Effectiveness of this pattern.
     
     - 'strategy.caption': A "Fill-in-the-blank" viral template that combines the best elements of all analyzed competitors.
+    
+    - 'virality.score': Rate the competitors' average effectiveness (0-100).
+    - 'virality.baselineScore': N/A (Set to 0 or null).
   `,
   TREND_HUNTER: (niche: string, currentDate: string) => `
     MODE: TREND HUNTER.

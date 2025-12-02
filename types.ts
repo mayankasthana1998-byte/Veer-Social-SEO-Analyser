@@ -53,7 +53,8 @@ export interface AnalysisResult {
     };
   };
   virality: {
-    score: number;
+    score: number; // The Optimized Score (After AI)
+    baselineScore?: number; // The Raw Input Score (Before AI)
     gapAnalysis: string;
     trendDetected?: string; 
     vibe?: string; 

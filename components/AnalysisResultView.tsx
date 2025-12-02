@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { AnalysisResult, AppMode } from '../types';
-import { Copy, TrendingUp, Hash, Eye, MessageSquare, AlertTriangle, Flame, Share2, Download, Twitter, Linkedin, MessageCircle, Sparkles, Zap, Crosshair, Check, BarChart3 } from 'lucide-react';
+import { Copy, TrendingUp, Hash, Eye, MessageSquare, AlertTriangle, Flame, Share2, Download, Twitter, Linkedin, MessageCircle, Sparkles, Zap, Crosshair, Check, BarChart3, ArrowRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface AnalysisResultViewProps {
@@ -94,6 +94,11 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode })
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(fullStrategyContent)}`;
   const linkedinUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(result.strategy.headline)}`;
 
+  // Determine scoring display logic
+  const baseline = result.virality.baselineScore || 50;
+  const finalScore = result.virality.score;
+  const improvement = finalScore - baseline;
+
   return (
     <div ref={containerRef} className="space-y-6 animate-fade-in pb-12">
       
@@ -105,7 +110,7 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode })
            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10 opacity-50 group-hover:opacity-100 transition-opacity"></div>
            <div className="relative z-10 flex flex-col justify-between h-full">
               <div className="flex justify-between items-start">
-                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Virality Potential</h3>
+                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Optimization Impact</h3>
                  {result.virality.trendDetected && (
                    <span className="bg-orange-500/20 text-orange-400 text-[10px] font-bold px-2 py-1 rounded-full flex items-center border border-orange-500/30 animate-pulse">
                      <Flame className="w-3 h-3 mr-1" /> TRENDING
@@ -113,14 +118,37 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode })
                  )}
               </div>
               
-              <div className="flex items-end mt-4">
-                 <span className={`text-8xl font-black bg-clip-text text-transparent bg-gradient-to-b ${getScoreColor(result.virality.score)}`}>
-                   {result.virality.score}
-                 </span>
-                 <span className="text-2xl font-bold text-slate-600 mb-4 ml-2">/100</span>
+              {/* BEFORE VS AFTER VISUALIZATION */}
+              <div className="mt-6 flex items-center justify-between gap-2">
+                 {/* Input / Baseline */}
+                 <div className="flex flex-col items-center">
+                    <div className="text-3xl font-bold text-slate-600 grayscale opacity-70">
+                      {baseline}
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-600 uppercase mt-1">Input</span>
+                 </div>
+
+                 {/* Arrow */}
+                 <div className="flex-1 flex flex-col items-center px-2">
+                    <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden relative">
+                       <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-slate-700 to-indigo-500 animate-[shimmer_2s_infinite]" style={{width: '100%'}}></div>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-400 mt-2 flex items-center bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      <TrendingUp className="w-3 h-3 mr-1" />
+                      +{improvement > 0 ? improvement : 0} PTS
+                    </span>
+                 </div>
+
+                 {/* Optimized Score */}
+                 <div className="flex flex-col items-center">
+                    <div className={`text-5xl font-black bg-clip-text text-transparent bg-gradient-to-b ${getScoreColor(finalScore)}`}>
+                      {finalScore}
+                    </div>
+                    <span className="text-[10px] font-bold text-white uppercase mt-1">Optimized</span>
+                 </div>
               </div>
 
-              <div className="mt-4 bg-slate-950/50 rounded-xl p-3 border border-slate-800/50">
+              <div className="mt-6 bg-slate-950/50 rounded-xl p-3 border border-slate-800/50">
                  <div className="flex items-center text-yellow-500 text-xs font-bold mb-1">
                    <AlertTriangle className="w-3 h-3 mr-2" />
                    GAP ANALYSIS

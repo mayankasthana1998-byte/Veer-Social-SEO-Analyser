@@ -424,10 +424,15 @@ const App: React.FC = () => {
                <span className="text-xs font-bold">ACADEMY</span>
              </button>
 
-             <div className="hidden md:flex items-center px-3 py-1 bg-black/40 rounded-full border border-white/5 gap-2 group cursor-pointer" onClick={() => { if(confirm('Disconnect API Key?')) clearApiKey(); }}>
+             {/* API KEY BUTTON - NEW */}
+             <button
+               onClick={() => { if(confirm('Change or Disconnect API Key?')) clearApiKey(); }}
+               className="hidden md:flex items-center gap-2 px-3 py-1 bg-black/40 rounded-full border border-white/5 group hover:border-red-500/30 transition-all"
+               title="API Key Settings"
+             >
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse group-hover:bg-red-500"></span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider group-hover:text-red-400">System Online</span>
-             </div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider group-hover:text-red-400">KEY</span>
+             </button>
           </div>
         </header>
       </div>

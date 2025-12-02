@@ -58,10 +58,17 @@ const uploadLargeFile = async (ai: GoogleGenAI, file: File): Promise<{ fileData:
     };
   } catch (error: any) {
     console.error("File upload error:", error);
-    if (error.message && error.message.includes('403')) {
+    // Explicitly bubble up the real error (413, 400, etc.)
+    const errorMsg = error.message || "Unknown error";
+    
+    if (errorMsg.includes('403')) {
        throw new Error("Permission Denied (403). Your API Key might lack permissions to upload files.");
     }
-    throw new Error(`Failed to upload "${file.name}". Connection unstable.`);
+    if (errorMsg.includes('413')) {
+      throw new Error("413 Payload Too Large. The file size exceeds Google's API limit for this connection type.");
+    }
+    
+    throw new Error(`Failed to upload "${file.name}". ${errorMsg}`);
   }
 };
 
@@ -227,6 +234,7 @@ export const analyzeContent = async (
             type: Type.OBJECT,
             properties: {
               score: { type: Type.NUMBER },
+              baselineScore: { type: Type.NUMBER }, // NEW FIELD
               gapAnalysis: { type: Type.STRING },
               trendDetected: { type: Type.STRING },
               vibe: { type: Type.STRING },
