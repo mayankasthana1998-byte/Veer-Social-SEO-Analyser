@@ -55,9 +55,9 @@ const uploadLargeFile = async (ai: GoogleGenAI, file: File): Promise<{ fileData:
         mimeType: fileInfo.mimeType
       }
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("File upload error:", error);
-    throw new Error("Failed to upload large file to Gemini. Please try a smaller file.");
+    throw new Error(`Failed to upload "${file.name}". The file might be too large or the connection unstable.`);
   }
 };
 
@@ -73,6 +73,7 @@ const cleanJson = (text: string) => {
 };
 
 export const analyzeContent = async (
+  apiKey: string, // REQUIRED: User provided key
   files: File[],
   mode: AppMode,
   platform: Platform,
@@ -80,17 +81,25 @@ export const analyzeContent = async (
     goal?: string; 
     style?: string; 
     keywords?: string; 
-    originalText?: string; // Used for Refine Draft OR Competitor Captions
+    originalText?: string; 
     geography?: string;
     targetAudience?: string;
     targetLanguage?: string;
     demographics?: string;
     brandGuidelines?: string;
     niche?: string; 
+    // Enhanced Targeting
+    tone?: string[];
+    engagementGoal?: string[];
+    contentFormat?: string;
   }
 ): Promise<AnalysisResult | TrendItem[]> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    if (!apiKey) {
+      throw new Error("API Key is missing. Please enter your Google AI Studio Key.");
+    }
+
+    const ai = new GoogleGenAI({ apiKey: apiKey });
 
     const currentDate = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
 
@@ -118,7 +127,13 @@ export const analyzeContent = async (
       promptText += "IMPORTANT: You MUST return a valid JSON object matching the AnalysisResult structure. Do not include markdown formatting.\n\n";
 
       if (mode === AppMode.GENERATION) {
-        promptText += MODE_PROMPTS.GENERATION(platform, config.goal || 'Viral Growth', config.style || 'Authentic', targeting);
+        promptText += MODE_PROMPTS.GENERATION(
+          platform, 
+          config.engagementGoal || ['Viral Growth'], 
+          config.tone || ['Authentic'], 
+          config.contentFormat || 'Standard',
+          targeting
+        );
       } else if (mode === AppMode.REFINE) {
         promptText += MODE_PROMPTS.REFINE(config.originalText || '', config.keywords || '', targeting);
       } else if (mode === AppMode.COMPETITOR_SPY) {
@@ -155,7 +170,6 @@ export const analyzeContent = async (
     // 3. Configure Request
     const generateConfig: any = {
       systemInstruction: SYSTEM_INSTRUCTION,
-      // thinkingConfig removed for stability
     };
 
     const useSearch = mode === AppMode.TREND_HUNTER;
@@ -225,7 +239,8 @@ export const analyzeContent = async (
                     keywords: { type: Type.ARRAY, items: { type: Type.STRING } },
                     hookUsed: { type: Type.STRING },
                     whyItWins: { type: Type.STRING },
-                    rankingStrategy: { type: Type.STRING }
+                    rankingStrategy: { type: Type.STRING },
+                    impactScore: { type: Type.NUMBER }
                   }
                 }
               }
@@ -260,9 +275,32 @@ export const analyzeContent = async (
 
   } catch (error: any) {
     console.error("Gemini Analysis Error:", error);
-    if (error.message?.includes('413') || error.message?.includes('too large')) {
-      throw new Error("The file is too large for the current connection. Please try a smaller file.");
+    
+    // Explicit upload errors
+    if (error.message && error.message.includes('Failed to upload')) {
+      throw error;
     }
+
+    // File size errors
+    if (error.message?.includes('413') || error.message?.includes('too large') || error.message?.includes('payload')) {
+      if (files.length > 0) {
+        // Find largest file
+        const largestFile = files.reduce((prev, current) => (prev.size > current.size) ? prev : current);
+        throw new Error(`Total request size exceeded limit. "${largestFile.name}" is your largest file (${(largestFile.size/1024/1024).toFixed(1)}MB). Try uploading fewer files or splitting larger ones.`);
+      }
+      throw new Error("The request payload is too large. Please try using fewer or smaller files.");
+    }
+
+    // Generic API Key error detection
+    if (error.message?.includes('API key') || error.message?.includes('401') || error.message?.includes('403')) {
+      throw new Error("Invalid API Key. Please update your key in the main menu.");
+    }
+
+    // Quota errors
+    if (error.message?.includes('429')) {
+      throw new Error("API Quota Exceeded. Please try again in a minute.");
+    }
+
     throw new Error(`Connection Failed: ${error.message || 'Check API Key'}`);
   }
 };

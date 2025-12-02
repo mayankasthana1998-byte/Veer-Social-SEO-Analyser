@@ -48,7 +48,7 @@ The user has provided strict Brand Guidelines. You MUST adhere to the following 
 `;
 
 export const MODE_PROMPTS = {
-  GENERATION: (platform: Platform, goal: string, style: string, targeting: string) => {
+  GENERATION: (platform: Platform, goals: string[], tones: string[], format: string, targeting: string) => {
     let platformStrategy = "";
     
     // 20-YEAR VETERAN STRATEGIST LOGIC PER PLATFORM
@@ -116,21 +116,33 @@ export const MODE_PROMPTS = {
     return `
     MODE A: GENERATION (The Creator).
     Target Platform: ${platform}.
-    User Goal: ${goal}.
-    Desired Style: ${style}.
+    Content Format: ${format}.
+    Engagement Goals: ${goals.join(', ')}.
+    Desired Tones: ${tones.join(', ')}.
     ${targeting}
     
     **YOUR ROLE: 20-Year Social Media Strategist & Content Veteran.**
-    Don't just write a caption. Architect a *moment*. 
+    Don't just write a caption. Architect a *moment* optimized for the ${format} format.
     
     ${platformStrategy}
+
+    **STRATEGIC ADAPTATION:**
+    - **Tone Adjustment:** Blend the requested tones (${tones.join(', ')}) into a cohesive voice.
+    - **Goal Optimization:**
+      ${goals.includes('Shares') ? '- Prioritize "Relatability" and "Identity" triggers (things people want to identify with).' : ''}
+      ${goals.includes('Saves') ? '- Prioritize "High Value", "Lists", or "Step-by-Step" density.' : ''}
+      ${goals.includes('Comments') ? '- Prioritize "Controversial opinions" or "Open questions".' : ''}
+      ${goals.includes('Clicks') ? '- Prioritize "Curiosity Gaps" and clear CTAs.' : ''}
+    - **Format Structure:**
+      ${format === 'Carousel' || format === 'PDF/Carousel' ? '- Structure the caption to support a slide-by-slide narrative. Suggest text for each slide.' : ''}
+      ${format === 'Thread' ? '- Structure as a sequence of tweets.' : ''}
 
     **EXECUTION STEPS:**
     1. **VISUAL AUDIT:** Look at the image/video. Identify the *feeling*. Is it fast? Slow? Sad? Hype? Match that energy in the writing.
     2. **THE HOOK:** Write a headline/overlay text that makes scrolling impossible. Use psychology (Curiosity Gap, Negativity Bias, or Specificity).
     3. **THE CAPTION:** Write the copy based on the Platform Strategy above.
        - Use line breaks for readability.
-       - Use emojis strategically (placed at end of sentences or as bullets) based on the specific platform norms described above.
+       - Use emojis strategically.
     4. **SEO:** Generate high-traffic keywords that fit the *intent* of the user.
 
     If Platform is Twitter (X): Structure the 'caption' as the first tweet of a Thread.
@@ -165,6 +177,7 @@ export const MODE_PROMPTS = {
        - 'hookUsed': The specific hook type (e.g. "Negative Warning").
        - 'whyItWins': The psychological trigger (e.g. "Triggers loss aversion in the first 3 seconds").
        - 'rankingStrategy': The algorithmic trick (e.g. "Uses high-contrast text overlay to force OCR indexing").
+       - 'impactScore': An estimated integer score (0-100) representing the Viral Impact/Effectiveness of this pattern.
     
     - 'strategy.caption': A "Fill-in-the-blank" viral template that combines the best elements of all analyzed competitors.
   `,

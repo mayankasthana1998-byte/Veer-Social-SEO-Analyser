@@ -30,6 +30,7 @@ export interface CompetitorRow {
   hookUsed: string;
   whyItWins: string;
   rankingStrategy: string;
+  impactScore: number;
 }
 
 export interface AnalysisResult {
@@ -69,10 +70,38 @@ export interface TrendItem {
   headline: string;
   whyItsHot: string;
   contentIdea: string;
+  platform?: string;
+  difficulty?: string;
 }
 
 export interface FileInput {
   file: File;
   preview: string;
   type: 'image' | 'video';
+}
+
+export interface HistoryItem {
+  id: string;
+  timestamp: number;
+  mode: AppMode;
+  platform?: Platform;
+  data: AnalysisResult | TrendItem[];
+  summary: string;
+}
+
+export interface ConfigState {
+  goal: string;
+  style: string;
+  keywords: string;
+  originalText: string;
+  geography: string;
+  targetAudience: string;
+  targetLanguage: string;
+  demographics: string;
+  brandGuidelines: string;
+  niche: string;
+  // Enhanced Targeting
+  tone: string[];
+  engagementGoal: string[];
+  contentFormat: string;
 }

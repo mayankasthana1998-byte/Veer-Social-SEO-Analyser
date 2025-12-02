@@ -1,12 +1,43 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { AnalysisResult, AppMode } from '../types';
-import { Copy, TrendingUp, Hash, Eye, MessageSquare, AlertTriangle, Flame, Share2, Download, Twitter, Linkedin, MessageCircle, Sparkles, Zap, Crosshair } from 'lucide-react';
+import { Copy, TrendingUp, Hash, Eye, MessageSquare, AlertTriangle, Flame, Share2, Download, Twitter, Linkedin, MessageCircle, Sparkles, Zap, Crosshair, Check, BarChart3 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface AnalysisResultViewProps {
   result: AnalysisResult;
   mode: AppMode;
 }
+
+const CopyButton = ({ text, className = "", label = "", iconClass = "w-3 h-3" }: { text: string, className?: string, label?: string, iconClass?: string }) => {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button onClick={handleCopy} className={`flex items-center transition-all hover:opacity-80 active:scale-95 ${className}`} title="Copy to clipboard">
+      {copied ? <Check className={`${iconClass} text-emerald-400`} /> : <Copy className={`${iconClass}`} />}
+      {label && <span className={`ml-1.5 ${copied ? 'text-emerald-400' : ''}`}>{label}</span>}
+    </button>
+  );
+};
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-900 border border-slate-700 p-3 rounded-xl shadow-xl">
+        <p className="text-white font-bold text-xs mb-1">{label}</p>
+        <p className="text-indigo-400 text-xs font-mono">
+          Impact Score: {payload[0].value}/100
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
 
 const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -25,7 +56,7 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode })
     return 'from-red-400 to-pink-600';
   };
 
-  const fullStrategyContent = `HEADLINE:\n${result.strategy.headline}\n\nCAPTION:\n${result.strategy.caption}\n\nCTA:\n${result.strategy.cta}\n\nHASHTAGS:\n${result.seo.hashtags?.broad?.join(' ')} ${result.seo.hashtags?.niche?.join(' ')}`;
+  const fullStrategyContent = `HEADLINE:\n${result.strategy.headline}\n\nCAPTION:\n${result.strategy.caption}\n\nCTA:\n${result.strategy.cta}\n\nHASHTAGS:\n${result.seo.hashtags?.broad?.join(' ')} ${result.seo.hashtags?.niche?.join(' ')} ${result.seo.hashtags?.specific?.join(' ')}`;
 
   const handleSmartShare = async () => {
     if (navigator.share) {
@@ -129,12 +160,18 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode })
                      <h3 className="text-sm font-bold text-white">Competitor DNA</h3>
                    </div>
                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-slate-950/50 p-2 rounded-lg border border-slate-800">
-                        <span className="block text-slate-500 font-bold mb-1">THEME</span>
+                      <div className="bg-slate-950/50 p-2 rounded-lg border border-slate-800 relative group/item">
+                        <div className="flex justify-between items-start">
+                           <span className="block text-slate-500 font-bold mb-1">THEME</span>
+                           <CopyButton text={result.competitorInsights.visualTheme} className="text-slate-600 hover:text-white" />
+                        </div>
                         {result.competitorInsights.visualTheme}
                       </div>
-                      <div className="bg-slate-950/50 p-2 rounded-lg border border-slate-800">
-                        <span className="block text-slate-500 font-bold mb-1">FORMULA</span>
+                      <div className="bg-slate-950/50 p-2 rounded-lg border border-slate-800 relative group/item">
+                        <div className="flex justify-between items-start">
+                           <span className="block text-slate-500 font-bold mb-1">FORMULA</span>
+                           <CopyButton text={result.competitorInsights.formula} className="text-slate-600 hover:text-white" />
+                        </div>
                         {result.competitorInsights.formula}
                       </div>
                    </div>
@@ -160,9 +197,52 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode })
       {mode === AppMode.COMPETITOR_SPY && result.competitorInsights?.spyMatrix && (
          <div className="md:col-span-12">
             <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 overflow-hidden">
-               <h3 className="text-sm font-black uppercase tracking-widest text-indigo-400 mb-6 flex items-center">
-                 <Crosshair className="w-4 h-4 mr-2" /> Competitor Spy Matrix
-               </h3>
+               <div className="flex justify-between items-center mb-6">
+                 <h3 className="text-sm font-black uppercase tracking-widest text-indigo-400 flex items-center">
+                   <Crosshair className="w-4 h-4 mr-2" /> Competitor Spy Matrix
+                 </h3>
+                 <div className="flex items-center gap-2 text-[10px] text-slate-500 bg-slate-950/50 px-3 py-1 rounded-full border border-slate-800">
+                    <BarChart3 className="w-3 h-3 text-indigo-400" />
+                    Viral Impact Analysis
+                 </div>
+               </div>
+
+               {/* Visualization Chart */}
+               <div className="w-full h-48 mb-8">
+                 <ResponsiveContainer width="100%" height="100%">
+                   <BarChart 
+                      data={result.competitorInsights.spyMatrix.map(item => ({
+                        name: item.hookUsed.length > 20 ? item.hookUsed.substring(0, 20) + '...' : item.hookUsed,
+                        fullHook: item.hookUsed,
+                        score: item.impactScore || 50 // fallback if old data
+                      }))}
+                      margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                   >
+                     <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                     <XAxis 
+                       dataKey="name" 
+                       stroke="#64748b" 
+                       fontSize={10} 
+                       tickLine={false} 
+                       axisLine={false}
+                     />
+                     <YAxis 
+                       stroke="#64748b" 
+                       fontSize={10} 
+                       tickLine={false} 
+                       axisLine={false}
+                       domain={[0, 100]}
+                     />
+                     <Tooltip content={<CustomTooltip />} cursor={{fill: '#1e293b', opacity: 0.4}} />
+                     <Bar dataKey="score" radius={[4, 4, 0, 0]} barSize={40}>
+                        {result.competitorInsights.spyMatrix.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#6366f1' : '#8b5cf6'} />
+                        ))}
+                     </Bar>
+                   </BarChart>
+                 </ResponsiveContainer>
+               </div>
+
                <div className="overflow-x-auto">
                  <table className="w-full text-left border-collapse">
                    <thead>
@@ -180,10 +260,11 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode })
                            {row.hookUsed}
                          </td>
                          <td className="py-4 text-slate-400 align-top">
-                           <div className="flex flex-wrap gap-1">
+                           <div className="flex flex-wrap gap-1 items-center">
                              {row.keywords.map((k, j) => (
                                <span key={j} className="text-[10px] px-1.5 py-0.5 bg-black rounded border border-slate-800">{k}</span>
                              ))}
+                             <CopyButton text={row.keywords.join(', ')} className="ml-2 text-slate-600 hover:text-white" />
                            </div>
                          </td>
                          <td className="py-4 text-slate-300 pr-4 align-top">{row.whyItWins}</td>
@@ -210,12 +291,12 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode })
               </h2>
               <p className="text-xs text-slate-500 font-mono mt-1 uppercase tracking-widest">Generated via Andromeda Engine</p>
             </div>
-            <button 
-              onClick={() => navigator.clipboard.writeText(result.strategy.caption)}
+            {/* Main Copy Button - Copies EVERYTHING */}
+            <CopyButton 
+              text={fullStrategyContent} 
               className="flex items-center px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-xs font-bold text-white transition-all hover:scale-105"
-            >
-              <Copy className="w-3 h-3 mr-2" /> COPY ALL
-            </button>
+              label="COPY ALL"
+            />
           </div>
 
           <div className="grid gap-6">
@@ -223,21 +304,30 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode })
              <div className="relative">
                <span className="absolute -left-2 top-0 bottom-0 w-1 bg-indigo-500 rounded-full"></span>
                <div className="pl-4">
-                 <span className="text-[10px] font-black uppercase text-indigo-400 tracking-widest">Overlay Text</span>
-                 <p className="text-2xl md:text-3xl font-black text-white mt-1 leading-tight">{result.strategy.headline}</p>
+                 <div className="flex justify-between items-center mb-1">
+                   <span className="text-[10px] font-black uppercase text-indigo-400 tracking-widest">Overlay Text</span>
+                   <CopyButton text={result.strategy.headline} className="text-slate-500 hover:text-white" />
+                 </div>
+                 <p className="text-2xl md:text-3xl font-black text-white leading-tight">{result.strategy.headline}</p>
                </div>
              </div>
 
              {/* CAPTION */}
              <div className="bg-white/5 rounded-2xl p-6 border border-white/5">
-                <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-4">Caption Script</span>
+                <div className="flex justify-between items-center mb-4">
+                   <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest block">Caption Script</span>
+                   <CopyButton text={result.strategy.caption} className="text-slate-500 hover:text-white" />
+                </div>
                 <p className="text-slate-200 whitespace-pre-wrap leading-7 font-light">{result.strategy.caption}</p>
              </div>
 
              {/* CTA */}
              <div className="flex items-center justify-between bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border border-indigo-500/30 p-4 rounded-2xl">
                 <span className="text-xs font-bold text-indigo-300">CALL TO ACTION</span>
-                <span className="font-bold text-white">{result.strategy.cta}</span>
+                <div className="flex items-center gap-4">
+                  <span className="font-bold text-white text-right">{result.strategy.cta}</span>
+                  <CopyButton text={result.strategy.cta} className="text-indigo-300 hover:text-white" />
+                </div>
              </div>
           </div>
 
@@ -277,9 +367,17 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode })
 
       {/* 4. SEO CLOUD */}
       <div ref={seoRef} className="bg-black/40 border border-slate-800/60 p-6 rounded-[32px]">
-        <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4 flex items-center">
-            <Hash className="w-3 h-3 mr-2" /> SEO Injection
-        </h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center">
+              <Hash className="w-3 h-3 mr-2" /> SEO Injection
+          </h3>
+          <CopyButton 
+             text={result.seo.hiddenKeywords?.join(', ') || ''} 
+             className="text-slate-500 hover:text-white text-xs" 
+             label="COPY KEYWORDS"
+          />
+        </div>
+        
         <div className="flex flex-wrap gap-2 mb-6">
            {result.seo.hiddenKeywords?.map((k, i) => (
              <span key={i} className="text-[10px] font-mono bg-slate-900 text-slate-400 border border-slate-800 px-3 py-1.5 rounded-lg hover:border-slate-600 transition-colors cursor-default">{k}</span>
@@ -287,16 +385,25 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode })
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
            <div>
-             <span className="text-[10px] font-bold text-blue-400 uppercase">Broad</span>
-             <p className="text-xs text-slate-400 mt-2 leading-relaxed">{result.seo.hashtags?.broad?.join(' ')}</p>
+             <div className="flex justify-between items-center mb-2">
+               <span className="text-[10px] font-bold text-blue-400 uppercase">Broad</span>
+               <CopyButton text={result.seo.hashtags?.broad?.join(' ') || ''} className="text-slate-600 hover:text-blue-400" />
+             </div>
+             <p className="text-xs text-slate-400 leading-relaxed">{result.seo.hashtags?.broad?.join(' ')}</p>
            </div>
            <div>
-             <span className="text-[10px] font-bold text-indigo-400 uppercase">Niche</span>
-             <p className="text-xs text-slate-400 mt-2 leading-relaxed">{result.seo.hashtags?.niche?.join(' ')}</p>
+             <div className="flex justify-between items-center mb-2">
+               <span className="text-[10px] font-bold text-indigo-400 uppercase">Niche</span>
+               <CopyButton text={result.seo.hashtags?.niche?.join(' ') || ''} className="text-slate-600 hover:text-indigo-400" />
+             </div>
+             <p className="text-xs text-slate-400 leading-relaxed">{result.seo.hashtags?.niche?.join(' ')}</p>
            </div>
            <div>
-             <span className="text-[10px] font-bold text-pink-400 uppercase">Specific</span>
-             <p className="text-xs text-slate-400 mt-2 leading-relaxed">{result.seo.hashtags?.specific?.join(' ')}</p>
+             <div className="flex justify-between items-center mb-2">
+               <span className="text-[10px] font-bold text-pink-400 uppercase">Specific</span>
+               <CopyButton text={result.seo.hashtags?.specific?.join(' ') || ''} className="text-slate-600 hover:text-pink-400" />
+             </div>
+             <p className="text-xs text-slate-400 leading-relaxed">{result.seo.hashtags?.specific?.join(' ')}</p>
            </div>
         </div>
       </div>

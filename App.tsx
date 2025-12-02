@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { AppMode, Platform, AnalysisResult, FileInput, TrendItem } from './types';
+import { AppMode, Platform, AnalysisResult, FileInput, TrendItem, HistoryItem } from './types';
 import { analyzeContent } from './services/geminiService';
 import FileUpload from './components/FileUpload';
 import AnalysisResultView from './components/AnalysisResultView';
 import MasterclassGuide from './components/MasterclassGuide';
+import GlobalSearch from './components/GlobalSearch';
 import { 
   Sparkles, 
   BrainCircuit, 
@@ -16,7 +17,6 @@ import {
   Youtube,
   Music2,
   Target,
-  Zap,
   Cpu,
   Flame,
   Twitter,
@@ -25,7 +25,11 @@ import {
   ShieldCheck,
   BookOpen,
   Eye,
-  Crosshair
+  Crosshair,
+  Key,
+  Copy,
+  Check,
+  Sliders
 } from 'lucide-react';
 
 interface ConfigState {
@@ -39,7 +43,22 @@ interface ConfigState {
   demographics: string;
   brandGuidelines: string;
   niche: string;
+  tone: string[];
+  engagementGoal: string[];
+  contentFormat: string;
 }
+
+const TONE_OPTIONS = ['Professional', 'Casual', 'Humorous', 'Contrarian', 'Empathetic', 'Authoritative', 'Urgent', 'Wholesome', 'Sarcastic', 'Inspirational'];
+const GOAL_OPTIONS = ['Viral Reach', 'Saves', 'Shares', 'Comments', 'Clicks', 'Sales'];
+
+const PLATFORM_FORMATS: Record<Platform, string[]> = {
+  [Platform.INSTAGRAM]: ['Reel', 'Carousel', 'Static Post', 'Story'],
+  [Platform.TIKTOK]: ['Vlog', 'Green Screen', 'Skit', 'Photo Mode'],
+  [Platform.YOUTUBE]: ['Shorts', 'Long-form', 'Community Post'],
+  [Platform.LINKEDIN]: ['Text Only', 'PDF/Carousel', 'Article', 'Video'],
+  [Platform.TWITTER]: ['Thread', 'Short Tweet', 'Media Post'],
+  [Platform.FACEBOOK]: ['Video', 'Image Post', 'Text Post'],
+};
 
 const App: React.FC = () => {
   const [mode, setMode] = useState<AppMode>(AppMode.GENERATION);
@@ -54,27 +73,97 @@ const App: React.FC = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [showMasterclass, setShowMasterclass] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  
+  // Trend Copy State
+  const [copiedTrendIndex, setCopiedTrendIndex] = useState<number | null>(null);
 
-  // Check for API Key on mount
-  const [hasApiKey, setHasApiKey] = useState(false);
+  // --- HISTORY STATE ---
+  const [history, setHistory] = useState<HistoryItem[]>(() => {
+    const saved = localStorage.getItem('SOCIAL_SEO_HISTORY');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const addToHistory = (mode: AppMode, data: AnalysisResult | TrendItem[], platform?: Platform, summary?: string) => {
+    const newItem: HistoryItem = {
+      id: Date.now().toString(),
+      timestamp: Date.now(),
+      mode,
+      platform,
+      data,
+      summary: summary || 'Generated Strategy'
+    };
+    const updatedHistory = [newItem, ...history].slice(0, 50); // Keep last 50 items
+    setHistory(updatedHistory);
+    localStorage.setItem('SOCIAL_SEO_HISTORY', JSON.stringify(updatedHistory));
+  };
+
+  const deleteFromHistory = (id: string) => {
+    const updated = history.filter(h => h.id !== id);
+    setHistory(updated);
+    localStorage.setItem('SOCIAL_SEO_HISTORY', JSON.stringify(updated));
+  };
+
+  const clearHistory = () => {
+    if(confirm('Are you sure you want to clear your entire strategy archive?')) {
+      setHistory([]);
+      localStorage.removeItem('SOCIAL_SEO_HISTORY');
+    }
+  };
+
+  const restoreFromHistory = (item: HistoryItem) => {
+    setMode(item.mode);
+    if (item.platform) setPlatform(item.platform);
+    
+    // Clear current files as we can't restore File objects from local storage
+    setFiles([]); 
+    
+    if (item.mode === AppMode.TREND_HUNTER) {
+      setTrendResults(item.data as TrendItem[]);
+      setResult(null);
+    } else {
+      setResult(item.data as AnalysisResult);
+      setTrendResults(null);
+    }
+    
+    setShowSearch(false);
+  };
+
+  // --- API KEY STATE ---
+  const [apiKey, setApiKey] = useState<string>('');
   const [apiKeyInput, setApiKeyInput] = useState('');
+  const [showGatekeeper, setShowGatekeeper] = useState(true);
 
   useEffect(() => {
-    // Check local storage or process.env
+    // 1. Check Local Storage
     const storedKey = localStorage.getItem('GEMINI_API_KEY');
-    if (storedKey || process.env.API_KEY) {
-      setHasApiKey(true);
+    if (storedKey) {
+      setApiKey(storedKey);
+      setShowGatekeeper(false);
+    } 
+    // 2. Check Environment Variable (for deployments that have it)
+    else if (process.env.API_KEY) {
+      setApiKey(process.env.API_KEY);
+      setShowGatekeeper(false);
     }
   }, []);
 
   const handleSaveKey = () => {
-    if (!apiKeyInput.startsWith('AIza')) {
-      alert('Invalid Key format. It must start with AIza.');
+    const keyToSave = apiKeyInput.trim();
+    if (!keyToSave.startsWith('AIza')) {
+      alert('Invalid Key format. It must start with "AIza".');
       return;
     }
-    localStorage.setItem('GEMINI_API_KEY', apiKeyInput);
-    // Reload to apply
-    window.location.reload();
+    localStorage.setItem('GEMINI_API_KEY', keyToSave);
+    setApiKey(keyToSave);
+    setShowGatekeeper(false);
+  };
+
+  const clearApiKey = () => {
+    localStorage.removeItem('GEMINI_API_KEY');
+    setApiKey('');
+    setApiKeyInput('');
+    setShowGatekeeper(true);
   };
 
   const [config, setConfig] = useState<ConfigState>({
@@ -87,8 +176,19 @@ const App: React.FC = () => {
     targetLanguage: '',
     demographics: '',
     brandGuidelines: '',
-    niche: ''
+    niche: '',
+    tone: [],
+    engagementGoal: [],
+    contentFormat: ''
   });
+
+  // Reset Format when Platform changes
+  useEffect(() => {
+     setConfig(prev => ({
+        ...prev,
+        contentFormat: PLATFORM_FORMATS[platform][0]
+     }));
+  }, [platform]);
 
   useEffect(() => {
     let interval: any;
@@ -137,21 +237,29 @@ const App: React.FC = () => {
     setResult(null);
     setTrendResults(null);
 
-    // Retrieve API Key
-    const finalApiKey = localStorage.getItem('GEMINI_API_KEY') || process.env.API_KEY || '';
-
     try {
       const filesToAnalyze = files.map(f => f.file);
       
-      const data = await analyzeContent(filesToAnalyze, mode, platform, config);
+      // Pass the API Key explicitly
+      const data = await analyzeContent(apiKey, filesToAnalyze, mode, platform, config);
       
       if (mode === AppMode.TREND_HUNTER) {
-        setTrendResults(data as TrendItem[]);
+        const trends = data as TrendItem[];
+        setTrendResults(trends);
+        addToHistory(mode, trends, undefined, `Trend Hunt: ${config.niche}`);
       } else {
-        setResult(data as AnalysisResult);
+        const analysis = data as AnalysisResult;
+        setResult(analysis);
+        addToHistory(mode, analysis, platform, analysis.strategy.headline || 'Strategy Analysis');
       }
     } catch (err: any) {
       setError(err.message || "Something glitched.");
+      if (err.message?.includes("API Key")) {
+        // Option to reset key if it failed
+        if (confirm("API Key seems invalid. Reset it?")) {
+          clearApiKey();
+        }
+      }
     } finally {
       setIsAnalyzing(false);
     }
@@ -161,11 +269,29 @@ const App: React.FC = () => {
     setMode(AppMode.GENERATION);
     setConfig(prev => ({
       ...prev,
-      style: 'Urgent & Hype',
-      goal: 'Viral Growth',
+      tone: ['Urgent', 'Hype'],
+      engagementGoal: ['Viral Reach'],
       keywords: trend.headline,
     }));
     alert(`Trend "${trend.headline}" Loaded. Drop the media.`);
+  };
+
+  const handleCopyTrend = (trend: TrendItem, index: number) => {
+    const text = `TREND: ${trend.headline}\nWHY: ${trend.whyItsHot}\nIDEA: ${trend.contentIdea}`;
+    navigator.clipboard.writeText(text);
+    setCopiedTrendIndex(index);
+    setTimeout(() => setCopiedTrendIndex(null), 2000);
+  };
+
+  const toggleSelection = (field: 'tone' | 'engagementGoal', value: string) => {
+    setConfig(prev => {
+      const current = prev[field];
+      if (current.includes(value)) {
+        return { ...prev, [field]: current.filter(item => item !== value) };
+      } else {
+        return { ...prev, [field]: [...current, value] };
+      }
+    });
   };
 
   const ModeButton = ({ m, icon: Icon, label, desc }: { m: AppMode, icon: any, label: string, desc: string }) => (
@@ -186,30 +312,45 @@ const App: React.FC = () => {
     </button>
   );
 
-  // --- API GATEKEEPER ---
-  if (!hasApiKey) {
+  // --- API GATEKEEPER UI ---
+  if (showGatekeeper) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-noise"></div>
+        <div className="bg-noise"></div>
         <div className="aurora-blob w-[500px] h-[500px] bg-indigo-600/20"></div>
         
-        <div className="relative z-10 max-w-md w-full bg-slate-900/50 backdrop-blur-2xl border border-white/10 p-8 rounded-[2.5rem] shadow-2xl">
+        <div className="relative z-10 max-w-md w-full bg-slate-900/50 backdrop-blur-2xl border border-white/10 p-8 rounded-[2.5rem] shadow-2xl animate-fade-in">
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-[0_0_30px_-5px_rgba(99,102,241,0.5)]">
               <Sparkles className="w-8 h-8 text-white" />
             </div>
           </div>
           <h1 className="text-3xl font-black text-center text-white mb-2 tracking-tight">SocialSEO AI</h1>
-          <p className="text-slate-400 text-center text-sm mb-8 font-medium">Enter your Neural Key to initialize the Andromeda Engine.</p>
+          <p className="text-slate-400 text-center text-sm mb-8 font-medium">Initialize Andromeda Engine</p>
           
           <div className="space-y-4">
+            <div className="bg-indigo-900/20 border border-indigo-500/20 p-4 rounded-xl mb-4">
+              <h3 className="text-xs font-bold text-indigo-300 mb-2 flex items-center gap-2">
+                <Key className="w-3 h-3" /> REQUIRED: API ACCESS
+              </h3>
+              <p className="text-[10px] text-slate-400 leading-relaxed">
+                To use the AI features, you need a free API Key from Google.
+              </p>
+              <ol className="list-decimal ml-4 mt-2 text-[10px] text-slate-300 space-y-1">
+                <li>Go to <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-white underline hover:text-indigo-400">Google AI Studio</a>.</li>
+                <li>Click "Create API Key".</li>
+                <li>Copy the key starting with "AIza".</li>
+                <li>Paste it below.</li>
+              </ol>
+            </div>
+
             <div>
-              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2 mb-1 block">Google AI Studio Key</label>
+              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2 mb-1 block">Your API Key</label>
               <input 
                 type="password" 
                 value={apiKeyInput}
                 onChange={(e) => setApiKeyInput(e.target.value)}
-                placeholder="AIza..."
+                placeholder="AIzaSy..."
                 className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-indigo-500 transition-colors font-mono text-sm"
               />
             </div>
@@ -217,11 +358,8 @@ const App: React.FC = () => {
               onClick={handleSaveKey}
               className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl transition-all hover:scale-[1.02] shadow-lg shadow-indigo-600/20"
             >
-              INITIALIZE SYSTEM
+              ACTIVATE SYSTEM
             </button>
-            <p className="text-[10px] text-center text-slate-600 mt-4">
-              Don't have a key? <a href="https://aistudio.google.com/" target="_blank" className="text-indigo-400 hover:underline">Get one here</a>.
-            </p>
           </div>
         </div>
       </div>
@@ -238,7 +376,16 @@ const App: React.FC = () => {
         <div className="aurora-blob w-[600px] h-[600px] bg-purple-900/20 bottom-[-10%] right-[-10%] animation-delay-4000"></div>
       </div>
 
+      {/* OVERLAYS */}
       {showMasterclass && <MasterclassGuide onClose={() => setShowMasterclass(false)} />}
+      <GlobalSearch 
+        isOpen={showSearch} 
+        onClose={() => setShowSearch(false)} 
+        history={history}
+        onSelect={restoreFromHistory}
+        onDelete={deleteFromHistory}
+        onClear={clearHistory}
+      />
 
       {/* FLOATING NAVBAR */}
       <div className="sticky top-4 z-50 px-4 mb-8">
@@ -251,6 +398,15 @@ const App: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-4">
+             {/* SEARCH BUTTON */}
+             <button
+               onClick={() => setShowSearch(true)}
+               className="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white transition-colors"
+               title="Search History"
+             >
+                <Search className="w-5 h-5" />
+             </button>
+
              <button
                onClick={() => setShowMasterclass(true)}
                className="hidden md:flex items-center gap-2 px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-400 hover:text-white rounded-full transition-all border border-indigo-500/30"
@@ -259,9 +415,9 @@ const App: React.FC = () => {
                <span className="text-xs font-bold">ACADEMY</span>
              </button>
 
-             <div className="hidden md:flex items-center px-3 py-1 bg-black/40 rounded-full border border-white/5 gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">System Online</span>
+             <div className="hidden md:flex items-center px-3 py-1 bg-black/40 rounded-full border border-white/5 gap-2 group cursor-pointer" onClick={() => { if(confirm('Disconnect API Key?')) clearApiKey(); }}>
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse group-hover:bg-red-500"></span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider group-hover:text-red-400">System Online</span>
              </div>
           </div>
         </header>
@@ -310,6 +466,69 @@ const App: React.FC = () => {
                     </button>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Strategy Refinement (Tone, Goal, Format) */}
+            {mode === AppMode.GENERATION && (
+              <div className="animate-fade-in space-y-4">
+                 <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2">
+                    <Sliders className="w-3 h-3" /> Strategy Refinement
+                 </label>
+                 
+                 {/* Format Selector */}
+                 <div className="bg-black/20 rounded-2xl p-4 border border-white/5">
+                    <label className="text-[10px] font-bold text-indigo-300 uppercase mb-2 block">Content Format</label>
+                    <select 
+                      value={config.contentFormat}
+                      onChange={(e) => setConfig({...config, contentFormat: e.target.value})}
+                      className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-xl p-2 outline-none focus:border-indigo-500"
+                    >
+                      {PLATFORM_FORMATS[platform].map((fmt) => (
+                         <option key={fmt} value={fmt}>{fmt}</option>
+                      ))}
+                    </select>
+                 </div>
+
+                 {/* Engagement Goal */}
+                 <div className="bg-black/20 rounded-2xl p-4 border border-white/5">
+                    <label className="text-[10px] font-bold text-pink-300 uppercase mb-2 block">Engagement Goals (Multi)</label>
+                    <div className="flex flex-wrap gap-2">
+                       {GOAL_OPTIONS.map((g) => (
+                          <button 
+                             key={g}
+                             onClick={() => toggleSelection('engagementGoal', g)}
+                             className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${
+                                config.engagementGoal.includes(g)
+                                ? 'bg-pink-600 border-pink-500 text-white'
+                                : 'bg-slate-900 border-slate-700 text-slate-500 hover:border-slate-500'
+                             }`}
+                          >
+                             {g}
+                          </button>
+                       ))}
+                    </div>
+                 </div>
+
+                 {/* Tone */}
+                 <div className="bg-black/20 rounded-2xl p-4 border border-white/5">
+                    <label className="text-[10px] font-bold text-cyan-300 uppercase mb-2 block">Tone of Voice (Multi)</label>
+                    <div className="flex flex-wrap gap-2">
+                       {TONE_OPTIONS.map((t) => (
+                          <button 
+                             key={t}
+                             onClick={() => toggleSelection('tone', t)}
+                             className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${
+                                config.tone.includes(t)
+                                ? 'bg-cyan-600 border-cyan-500 text-white'
+                                : 'bg-slate-900 border-slate-700 text-slate-500 hover:border-slate-500'
+                             }`}
+                          >
+                             {t}
+                          </button>
+                       ))}
+                    </div>
+                 </div>
               </div>
             )}
 
@@ -499,10 +718,19 @@ const App: React.FC = () => {
                   <Flame className="text-orange-500" /> LIVE TREND DATABASE
                </h3>
                {trendResults.map((trend, i) => (
-                  <div key={i} className="bg-slate-900/60 border border-slate-800 hover:border-orange-500/30 p-6 rounded-3xl group transition-all">
+                  <div key={i} className="bg-slate-900/60 border border-slate-800 hover:border-orange-500/30 p-6 rounded-3xl group transition-all relative">
                      <div className="flex justify-between items-start mb-4">
                         <h4 className="text-lg font-black text-white">{trend.headline}</h4>
-                        <span className="text-[10px] font-bold bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full border border-orange-500/20">HOT</span>
+                        <div className="flex gap-2">
+                           <button
+                             onClick={() => handleCopyTrend(trend, i)}
+                             className="p-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                             title="Copy Trend"
+                           >
+                              {copiedTrendIndex === i ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                           </button>
+                           <span className="text-[10px] font-bold bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full border border-orange-500/20 flex items-center">HOT</span>
+                        </div>
                      </div>
                      <p className="text-sm text-slate-400 mb-4">{trend.whyItsHot}</p>
                      <div className="bg-black/30 p-4 rounded-xl border border-white/5 mb-4">
