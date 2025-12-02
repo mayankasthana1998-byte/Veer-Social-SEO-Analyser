@@ -29,7 +29,8 @@ import {
   Key,
   Copy,
   Check,
-  Sliders
+  Sliders,
+  RefreshCcw
 } from 'lucide-react';
 
 interface ConfigState {
@@ -69,6 +70,7 @@ const App: React.FC = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [trendResults, setTrendResults] = useState<TrendItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isKeyError, setIsKeyError] = useState(false); // Track if error is key-related
   
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState('');
@@ -157,6 +159,8 @@ const App: React.FC = () => {
     localStorage.setItem('GEMINI_API_KEY', keyToSave);
     setApiKey(keyToSave);
     setShowGatekeeper(false);
+    setIsKeyError(false); // Clear error state on new key
+    setError(null);
   };
 
   const clearApiKey = () => {
@@ -164,6 +168,8 @@ const App: React.FC = () => {
     setApiKey('');
     setApiKeyInput('');
     setShowGatekeeper(true);
+    setIsKeyError(false);
+    setError(null);
   };
 
   const [config, setConfig] = useState<ConfigState>({
@@ -234,6 +240,7 @@ const App: React.FC = () => {
 
     setIsAnalyzing(true);
     setError(null);
+    setIsKeyError(false);
     setResult(null);
     setTrendResults(null);
 
@@ -253,13 +260,15 @@ const App: React.FC = () => {
         addToHistory(mode, analysis, platform, analysis.strategy.headline || 'Strategy Analysis');
       }
     } catch (err: any) {
-      setError(err.message || "Something glitched.");
-      if (err.message?.includes("API Key")) {
-        // Option to reset key if it failed
-        if (confirm("API Key seems invalid. Reset it?")) {
-          clearApiKey();
-        }
+      let errorMessage = err.message || "Something glitched.";
+      
+      // Handle the custom "INVALID_KEY" error from service
+      if (errorMessage === "INVALID_KEY") {
+        errorMessage = "API Key Invalid or Expired. Please reset it.";
+        setIsKeyError(true);
       }
+      
+      setError(errorMessage);
     } finally {
       setIsAnalyzing(false);
     }
@@ -682,9 +691,20 @@ const App: React.FC = () => {
 
           {/* 3. ERROR & LOADING */}
           {error && (
-            <div className="mb-8 p-4 bg-red-500/10 border border-red-500/50 rounded-2xl text-red-200 text-sm text-center font-bold animate-shake flex items-center justify-center gap-2">
-               <span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
-               {error}
+            <div className="mb-8 p-4 bg-red-500/10 border border-red-500/50 rounded-2xl text-red-200 text-sm text-center font-bold animate-shake flex flex-col items-center justify-center gap-2">
+               <div className="flex items-center gap-2">
+                 <span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                 {error}
+               </div>
+               
+               {isKeyError && (
+                 <button 
+                   onClick={clearApiKey}
+                   className="mt-2 flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold transition-colors"
+                 >
+                   <RefreshCcw className="w-3 h-3" /> RESET API KEY
+                 </button>
+               )}
             </div>
           )}
 

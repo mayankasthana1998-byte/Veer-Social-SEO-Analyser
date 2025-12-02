@@ -11,6 +11,7 @@ const fileToPart = (file: File): Promise<{ inlineData: { data: string; mimeType:
     const reader = new FileReader();
     reader.onloadend = () => {
       const result = reader.result as string;
+      // Robust base64 extraction
       const base64String = result.includes(',') ? result.split(',')[1] : result;
       resolve({
         inlineData: {
@@ -46,7 +47,7 @@ const uploadLargeFile = async (ai: GoogleGenAI, file: File): Promise<{ fileData:
     }
 
     if (fileInfo.state === 'FAILED') {
-      throw new Error("File processing failed on Gemini server.");
+      throw new Error(`File processing failed for ${file.name}`);
     }
 
     return {
@@ -57,19 +58,26 @@ const uploadLargeFile = async (ai: GoogleGenAI, file: File): Promise<{ fileData:
     };
   } catch (error: any) {
     console.error("File upload error:", error);
-    throw new Error(`Failed to upload "${file.name}". The file might be too large or the connection unstable.`);
+    if (error.message && error.message.includes('403')) {
+       throw new Error("Permission Denied (403). Your API Key might lack permissions to upload files.");
+    }
+    throw new Error(`Failed to upload "${file.name}". Connection unstable.`);
   }
 };
 
 const cleanJson = (text: string) => {
-  let clean = text.trim();
-  // Remove markdown code blocks if present
-  if (clean.startsWith('```json')) {
-    clean = clean.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-  } else if (clean.startsWith('```')) {
-    clean = clean.replace(/^```\s*/, '').replace(/\s*```$/, '');
+  // 1. Remove Markdown code blocks
+  let clean = text.replace(/```json/g, '').replace(/```/g, '');
+  
+  // 2. Find the first '{' and the last '}' to extract valid JSON object
+  const firstOpen = clean.indexOf('{');
+  const lastClose = clean.lastIndexOf('}');
+  
+  if (firstOpen !== -1 && lastClose !== -1 && lastClose > firstOpen) {
+    clean = clean.substring(firstOpen, lastClose + 1);
   }
-  return clean;
+
+  return clean.trim();
 };
 
 export const analyzeContent = async (
@@ -96,7 +104,7 @@ export const analyzeContent = async (
 ): Promise<AnalysisResult | TrendItem[]> => {
   try {
     if (!apiKey) {
-      throw new Error("API Key is missing. Please enter your Google AI Studio Key.");
+      throw new Error("MISSING_KEY");
     }
 
     const ai = new GoogleGenAI({ apiKey: apiKey });
@@ -155,7 +163,7 @@ export const analyzeContent = async (
     
     // Only process files if NOT in Trend Hunter mode
     if (mode !== AppMode.TREND_HUNTER) {
-      const FILE_SIZE_THRESHOLD = 20 * 1024 * 1024; 
+      const FILE_SIZE_THRESHOLD = 20 * 1024 * 1024; // 20MB
       for (const file of files) {
         if (file.size > FILE_SIZE_THRESHOLD) {
           const part = await uploadLargeFile(ai, file);
@@ -262,12 +270,21 @@ export const analyzeContent = async (
     if (!resultText) throw new Error("No response from AI");
 
     const cleanText = cleanJson(resultText);
-    const parsed = JSON.parse(cleanText);
+    let parsed;
+    
+    try {
+      parsed = JSON.parse(cleanText);
+    } catch (e) {
+      console.error("JSON Parsing Failed on:", cleanText);
+      throw new Error("AI returned malformed data. Please try again.");
+    }
 
     if (mode === AppMode.TREND_HUNTER) {
       if (parsed.trends && Array.isArray(parsed.trends)) {
         return parsed.trends as TrendItem[];
       }
+      // Fallback for Trend Hunter if structure varies slightly
+      if (Array.isArray(parsed)) return parsed as TrendItem[];
       throw new Error("Failed to parse Trend results.");
     } else {
       return parsed as AnalysisResult;
@@ -292,15 +309,23 @@ export const analyzeContent = async (
     }
 
     // Generic API Key error detection
-    if (error.message?.includes('API key') || error.message?.includes('401') || error.message?.includes('403')) {
-      throw new Error("Invalid API Key. Please update your key in the main menu.");
+    if (error.message === "MISSING_KEY") {
+      throw new Error("API Key is missing. Please re-enter your key.");
+    }
+
+    if (error.message?.includes('401') || error.message?.includes('403') || error.message?.includes('API key')) {
+      throw new Error("INVALID_KEY"); // Special code to trigger UI reset
     }
 
     // Quota errors
     if (error.message?.includes('429')) {
-      throw new Error("API Quota Exceeded. Please try again in a minute.");
+      throw new Error("API Quota Exceeded. You are sending too many requests too fast. Wait 1 minute.");
     }
 
-    throw new Error(`Connection Failed: ${error.message || 'Check API Key'}`);
+    if (error.message?.includes('503') || error.message?.includes('500')) {
+      throw new Error("Google AI Service is temporarily down. Please try again in a few moments.");
+    }
+
+    throw new Error(`Connection Failed: ${error.message || 'Unknown Error'}`);
   }
 };
