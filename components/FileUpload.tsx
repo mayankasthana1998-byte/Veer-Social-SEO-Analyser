@@ -1,5 +1,6 @@
+
 import React, { useRef } from 'react';
-import { Upload, X, FileVideo, ImagePlus, Zap } from 'lucide-react';
+import { Upload, X, FileVideo, ImagePlus, Zap, FileText } from 'lucide-react';
 import { MAX_FILE_SIZE_BYTES, MAX_FILE_SIZE_MB } from '../constants';
 import { FileInput } from '../types';
 
@@ -26,13 +27,23 @@ const FileUpload: React.FC<FileUploadProps> = ({ files, setFiles, multiple = fal
           return;
         }
 
-        const isVideo = file.type.startsWith('video/');
-        const preview = URL.createObjectURL(file);
+        let type: 'image' | 'video' | 'pdf' = 'image';
+        let preview = '';
+
+        if (file.type.startsWith('video/')) {
+          type = 'video';
+          preview = URL.createObjectURL(file);
+        } else if (file.type === 'application/pdf') {
+          type = 'pdf';
+          preview = ''; // No preview for PDF
+        } else {
+          preview = URL.createObjectURL(file);
+        }
 
         newFiles.push({
           file,
           preview,
-          type: isVideo ? 'video' : 'image'
+          type
         });
       });
 
@@ -47,7 +58,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ files, setFiles, multiple = fal
   const removeFile = (index: number) => {
     setFiles(prev => {
       const newFiles = [...prev];
-      URL.revokeObjectURL(newFiles[index].preview);
+      if (newFiles[index].preview) {
+        URL.revokeObjectURL(newFiles[index].preview);
+      }
       newFiles.splice(index, 1);
       return newFiles;
     });
@@ -66,10 +79,11 @@ const FileUpload: React.FC<FileUploadProps> = ({ files, setFiles, multiple = fal
           <div className="w-16 h-16 mb-4 rounded-2xl bg-slate-900 border border-slate-700 group-hover:border-indigo-500 group-hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.6)] flex items-center justify-center transition-all duration-300 group-hover:-translate-y-2">
             <Upload className="w-8 h-8 text-indigo-400 group-hover:text-indigo-200" />
           </div>
-          <p className="font-bold text-lg tracking-tight">Drop the {multiple ? 'Stash' : 'Sauce'}</p>
+          <p className="font-bold text-lg tracking-tight">Drop Media or Docs</p>
           <div className="flex items-center space-x-2 mt-2">
              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">IMG</span>
              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">VID</span>
+             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">PDF</span>
              <span className="text-xs text-slate-500">Max {formattedMaxSize}</span>
           </div>
         </div>
@@ -79,7 +93,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ files, setFiles, multiple = fal
           ref={fileInputRef} 
           className="hidden" 
           onChange={handleFileChange} 
-          accept="image/*,video/*"
+          accept="image/*,video/*,application/pdf"
           multiple={multiple}
         />
       </div>
@@ -101,12 +115,21 @@ const FileUpload: React.FC<FileUploadProps> = ({ files, setFiles, multiple = fal
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
                   <video src={f.preview} className="absolute inset-0 w-full h-full object-cover opacity-60" />
                 </div>
+              ) : f.type === 'pdf' ? (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 relative p-4 text-center">
+                  <FileText className="text-red-400 w-10 h-10 mb-2 relative z-10" />
+                  <p className="text-[10px] font-mono text-slate-400 break-all z-10 line-clamp-2">{f.file.name}</p>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                </div>
               ) : (
                 <img src={f.preview} alt="preview" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
               )}
               
               <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black via-black/80 to-transparent">
                  <p className="text-[10px] font-mono text-slate-300 truncate">{f.file.name}</p>
+                 <span className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">
+                   {(f.file.size / (1024*1024)).toFixed(1)} MB
+                 </span>
               </div>
             </div>
           ))}

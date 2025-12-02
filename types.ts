@@ -78,7 +78,7 @@ export interface TrendItem {
 export interface FileInput {
   file: File;
   preview: string;
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'pdf';
 }
 
 export interface HistoryItem {

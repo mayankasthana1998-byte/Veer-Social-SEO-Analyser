@@ -27,49 +27,74 @@ const fileToPart = (file: File): Promise<{ inlineData: { data: string; mimeType:
 
 // Helper to upload large files via File API
 const uploadLargeFile = async (ai: GoogleGenAI, file: File): Promise<{ fileData: { fileUri: string; mimeType: string } }> => {
-  try {
-    const uploadResult = await ai.files.upload({
-      file: file,
-      config: { 
-        displayName: file.name,
-        mimeType: file.type 
-      }
-    });
+  // Sanitize filename to strict ASCII to avoid API handshake issues
+  const safeDisplayName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+  
+  let attempts = 0;
+  const maxRetries = 3;
 
-    let fileInfo = await ai.files.get({ name: uploadResult.name });
-    
-    // Poll until active
-    let attempts = 0;
-    while (fileInfo.state === 'PROCESSING' && attempts < 30) {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      fileInfo = await ai.files.get({ name: uploadResult.name });
+  while (attempts < maxRetries) {
+    try {
+      const uploadResult = await ai.files.upload({
+        file: file,
+        config: { 
+          displayName: safeDisplayName,
+          mimeType: file.type || 'application/octet-stream' // Fallback MIME
+        }
+      });
+
+      let fileInfo = await ai.files.get({ name: uploadResult.name });
+      
+      // Poll until active
+      // 10GB files can take minutes to process. We increase wait time to ~10 minutes.
+      let pollAttempts = 0;
+      const MAX_POLL_ATTEMPTS = 120; // 120 * 5s = 600s (10 mins)
+      
+      while (fileInfo.state === 'PROCESSING' && pollAttempts < MAX_POLL_ATTEMPTS) {
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        fileInfo = await ai.files.get({ name: uploadResult.name });
+        pollAttempts++;
+      }
+
+      if (fileInfo.state === 'FAILED') {
+        throw new Error(`File processing failed on server side for ${file.name}`);
+      }
+
+      return {
+        fileData: {
+          fileUri: fileInfo.uri,
+          mimeType: fileInfo.mimeType
+        }
+      };
+    } catch (error: any) {
       attempts++;
-    }
-
-    if (fileInfo.state === 'FAILED') {
-      throw new Error(`File processing failed for ${file.name}`);
-    }
-
-    return {
-      fileData: {
-        fileUri: fileInfo.uri,
-        mimeType: fileInfo.mimeType
+      console.warn(`Upload attempt ${attempts} failed:`, error);
+      
+      if (attempts >= maxRetries) {
+        const errorMsg = error.message || "Unknown error";
+        
+        // Detailed Error Mapping
+        if (errorMsg.includes('403')) {
+           throw new Error("Permission Denied (403). Your API Key might lack permissions.");
+        }
+        if (errorMsg.includes('413')) {
+          throw new Error("413 Payload Too Large. The file exceeds the browser's upload capacity. Please try a faster connection.");
+        }
+        if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError')) {
+          throw new Error("Network Error. Upload interrupted. Please check your internet connection.");
+        }
+        if (errorMsg.includes('x-google-upload-url')) {
+          throw new Error("Browser Limit: Google blocks large uploads from this browser context due to CORS. Please compress the file under 20MB or use a server-side proxy.");
+        }
+        
+        throw new Error(`Failed to upload "${file.name}" after ${maxRetries} attempts. ${errorMsg}`);
       }
-    };
-  } catch (error: any) {
-    console.error("File upload error:", error);
-    // Explicitly bubble up the real error (413, 400, etc.)
-    const errorMsg = error.message || "Unknown error";
-    
-    if (errorMsg.includes('403')) {
-       throw new Error("Permission Denied (403). Your API Key might lack permissions to upload files.");
+      
+      // Wait 2 seconds before retry
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
-    if (errorMsg.includes('413')) {
-      throw new Error("413 Payload Too Large. The file size exceeds Google's API limit for this connection type.");
-    }
-    
-    throw new Error(`Failed to upload "${file.name}". ${errorMsg}`);
   }
+  throw new Error("Upload failed.");
 };
 
 const cleanJson = (text: string) => {
@@ -88,7 +113,7 @@ const cleanJson = (text: string) => {
 };
 
 export const analyzeContent = async (
-  apiKey: string, // REQUIRED: User provided key
+  apiKey: string, 
   files: File[],
   mode: AppMode,
   platform: Platform,
@@ -103,7 +128,6 @@ export const analyzeContent = async (
     demographics?: string;
     brandGuidelines?: string;
     niche?: string; 
-    // Enhanced Targeting
     tone?: string[];
     engagementGoal?: string[];
     contentFormat?: string;
@@ -134,7 +158,6 @@ export const analyzeContent = async (
     } 
     // Standard Modes
     else {
-      // Inject Brand Guidelines if provided
       if (config.brandGuidelines) {
         promptText += BRAND_GUARD_INSTRUCTION(config.brandGuidelines) + "\n\n";
       }
@@ -152,16 +175,15 @@ export const analyzeContent = async (
       } else if (mode === AppMode.REFINE) {
         promptText += MODE_PROMPTS.REFINE(config.originalText || '', config.keywords || '', targeting);
       } else if (mode === AppMode.COMPETITOR_SPY) {
-        // Pass the originalText as "Competitor Captions"
+        const fileContext = files.length > 0 ? `Analyzing ${files.length} mixed-media inputs (Images/Videos/PDFs).` : 'No files provided.';
+        promptText += `MODE C: COMPETITOR SPY. ${fileContext}\n`;
         promptText += MODE_PROMPTS.COMPETITOR_SPY(files.length, config.originalText || 'No captions provided', targeting);
       }
       
-      // CRITICAL LANGUAGE INJECTION
       if (config.targetLanguage) {
         promptText += `\n\nLANGUAGE OVERRIDE: The user has explicitly selected '${config.targetLanguage}'. 
         You MUST write the 'headline', 'caption', and 'cta' fields in ${config.targetLanguage}. 
-        Use the specified platform's cultural dialect (e.g. Hinglish for Hindi if casual, Formal if LinkedIn). 
-        Do NOT write these fields in English.`;
+        Use the specified platform's cultural dialect.`;
       }
     }
 
@@ -176,6 +198,11 @@ export const analyzeContent = async (
           const part = await uploadLargeFile(ai, file);
           parts.push(part);
         } else {
+          // Check if it's a PDF that is small enough for inline? 
+          // Gemini API usually prefers File API for PDFs regardless of size for better parsing, 
+          // but inline works for small ones. However, to be safe with 'documents', we'll rely on the 20MB threshold.
+          // Note: Standard inlineData supports image/*, video/*, audio/*. application/pdf works in some contexts but File API is safer for docs.
+          // If it's a small PDF, we'll try inline.
           const part = await fileToPart(file);
           parts.push(part);
         }
@@ -191,9 +218,7 @@ export const analyzeContent = async (
 
     if (useSearch) {
       generateConfig.tools = [{ googleSearch: {} }];
-      // NO responseSchema allowed with search tools
     } else {
-      // Standard Schema
       generateConfig.responseMimeType = "application/json";
       generateConfig.responseSchema = {
         type: Type.OBJECT,
@@ -234,7 +259,7 @@ export const analyzeContent = async (
             type: Type.OBJECT,
             properties: {
               score: { type: Type.NUMBER },
-              baselineScore: { type: Type.NUMBER }, // NEW FIELD
+              baselineScore: { type: Type.NUMBER }, 
               gapAnalysis: { type: Type.STRING },
               trendDetected: { type: Type.STRING },
               vibe: { type: Type.STRING },
@@ -291,7 +316,6 @@ export const analyzeContent = async (
       if (parsed.trends && Array.isArray(parsed.trends)) {
         return parsed.trends as TrendItem[];
       }
-      // Fallback for Trend Hunter if structure varies slightly
       if (Array.isArray(parsed)) return parsed as TrendItem[];
       throw new Error("Failed to parse Trend results.");
     } else {
@@ -301,31 +325,26 @@ export const analyzeContent = async (
   } catch (error: any) {
     console.error("Gemini Analysis Error:", error);
     
-    // Explicit upload errors
     if (error.message && error.message.includes('Failed to upload')) {
       throw error;
     }
 
-    // File size errors
     if (error.message?.includes('413') || error.message?.includes('too large') || error.message?.includes('payload')) {
       if (files.length > 0) {
-        // Find largest file
         const largestFile = files.reduce((prev, current) => (prev.size > current.size) ? prev : current);
         throw new Error(`Total request size exceeded limit. "${largestFile.name}" is your largest file (${(largestFile.size/1024/1024).toFixed(1)}MB). Try uploading fewer files or splitting larger ones.`);
       }
       throw new Error("The request payload is too large. Please try using fewer or smaller files.");
     }
 
-    // Generic API Key error detection
     if (error.message === "MISSING_KEY") {
       throw new Error("API Key is missing. Please re-enter your key.");
     }
 
     if (error.message?.includes('401') || error.message?.includes('403') || error.message?.includes('API key')) {
-      throw new Error("INVALID_KEY"); // Special code to trigger UI reset
+      throw new Error("INVALID_KEY"); 
     }
 
-    // Quota errors
     if (error.message?.includes('429')) {
       throw new Error("API Quota Exceeded. You are sending too many requests too fast. Wait 1 minute.");
     }
