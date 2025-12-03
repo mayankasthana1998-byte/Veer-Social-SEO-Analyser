@@ -91,6 +91,12 @@ export const MODE_PROMPTS = {
           - HOOK: Aesthetic or Relatable. "Save this for later" energy.
           - TONE: Curated, aspirational, yet accessible.
           - CTA: Focus on "Check the link in bio" or "Comment keyword".
+          ${format === 'Reel' ? `
+          - **REEL PROTOCOL (CRITICAL):**
+            - The 'Headline' MUST be designed as an On-Screen Text Overlay that appears in the first 3 seconds.
+            - It must use HIGH CONTRAST language.
+            - It must trigger immediate retention (Visual Hook).
+          ` : ''}
         `;
         break;
       case Platform.YOUTUBE:
@@ -136,6 +142,7 @@ export const MODE_PROMPTS = {
     - **Format Structure:**
       ${format === 'Carousel' || format === 'PDF/Carousel' ? '- Structure the caption to support a slide-by-slide narrative. Suggest text for each slide.' : ''}
       ${format === 'Thread' ? '- Structure as a sequence of tweets.' : ''}
+      ${format === 'Reel' && platform === 'Instagram' ? '- Headline MUST be the On-Screen Text Overlay.' : ''}
 
     **EXECUTION STEPS:**
     1. **VISUAL AUDIT:** Look at the image/video. Identify the *feeling*. Is it fast? Slow? Sad? Hype? Match that energy in the writing.
@@ -158,8 +165,14 @@ export const MODE_PROMPTS = {
     Original Draft: "${originalText}".
     ${targeting}
     
-    Action: Semantic Weaving. Insert high-volume keywords naturally without disrupting narrative flow.
-    Maintain original meaning 100%. Polish grammar. Enhance readability score.
+    Action: Semantic Weaving & Vibe Injection.
+    1. Insert high-volume keywords naturally without disrupting narrative flow.
+    2. Maintain original meaning 100%. Polish grammar. Enhance readability score.
+    3. **STRATEGIC EMOJI INJECTION (CRITICAL):** You MUST inject relevant, platform-native emojis to boost engagement.
+       - If LinkedIn: Use minimal, functional emojis (👉, 📌, ✅).
+       - If TikTok/IG: Use expressive, trending emojis (✨, 💀, 😭, 🔥, 👀).
+       - Do not be boring. Break up text walls with emojis.
+    4. **VISUAL HOOK:** If the context suggests a video/reel, suggest a "Text Overlay" hook in the analysis summary.
 
     **SCORING PROTOCOL (CRITICAL):**
     - **'virality.baselineScore'**: Rate the user's ORIGINAL DRAFT (0-100). Is it boring? Robotic? (Likely 30-60).
@@ -193,26 +206,33 @@ export const MODE_PROMPTS = {
     - 'virality.score': Rate the competitors' average effectiveness (0-100).
     - 'virality.baselineScore': N/A (Set to 0 or null).
   `,
-  TREND_HUNTER: (niche: string, currentDate: string) => `
+  TREND_HUNTER: (niche: string, platform: Platform, currentDate: string) => `
     MODE: TREND HUNTER.
+    Role: Professional Digital Social SEO Strategist.
     Niche: ${niche}.
-    Date: ${currentDate}.
+    Target Platform: ${platform}.
+    Current Date: ${currentDate}.
     
-    STEP 1: Search Google Trends, Twitter Trending, and TikTok Creative Center for the absolute latest news and trends in the ${niche} niche RIGHT NOW.
-    STEP 2: Select 5 specific, high-potential content ideas.
-    STEP 3: IGNORE generic news. Look for "Content Gaps" or "Rising Audio".
+    **STRATEGY:**
+    Use Google Search to find LIVE, HIGH-ROI opportunities. Do not return generic advice. Return specific "Content Gaps" that are trending NOW.
     
-    Return a JSON object containing an array called "trends".
-    Structure:
+    **PLATFORM SPECIFIC SEARCH PROTOCOL:**
+    ${platform === Platform.TIKTOK ? '- Look for "Trending Audio" and "Viral Challenges" in this niche. Focus on "TokBoard" or "Creative Center" data.' : ''}
+    ${platform === Platform.LINKEDIN ? '- Look for "Industry News", "Controversial Debates", or "New Regulations" affecting this niche.' : ''}
+    ${platform === Platform.INSTAGRAM ? '- Look for "Aesthetic Trends", "Reel Audio", or "Visual Formats" trending now.' : ''}
+    ${platform === Platform.YOUTUBE ? '- Look for "Breakout Search Terms" and "Rising Topics" in this niche.' : ''}
+    ${platform === Platform.TWITTER ? '- Look for "Breaking News" and "Main Character of the Day" topics.' : ''}
+
+    **OUTPUT REQUIREMENTS:**
+    Return a JSON object containing an array called "trends" with exactly 5 items.
+    
+    Structure per item:
     {
-      "trends": [
-        {
-          "headline": "Trend Name",
-          "whyItsHot": "1 sentence explanation of why it is viral now. Mention the 'SEO Angle'.",
-          "contentIdea": "Specific instruction on how to apply this to the niche."
-        },
-        ... (5 items)
-      ]
+      "headline": "Trend Name / Audio Name",
+      "whyItsHot": "Why it is viral (Psychology) + The SEO Angle (What keyword is spiking?).",
+      "contentIdea": "ACTIONABLE BLUEPRINT: Step-by-step instruction on how to execute this for ${platform}. Be specific (e.g. 'Use Green Screen effect', 'Film a reaction to X').",
+      "difficulty": "Easy/Medium/Hard",
+      "platform": "${platform}"
     }
   `
 };

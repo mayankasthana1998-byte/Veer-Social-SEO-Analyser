@@ -89,21 +89,37 @@ const extractFramesFromVideo = async (videoFile: File, frameCount: number = 5): 
 const uploadLargeFile = async (ai: GoogleGenAI, file: File): Promise<{ fileData: { fileUri: string; mimeType: string } }> => {
   const safeDisplayName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
   
-  try {
-    const uploadResult = await ai.files.upload({
-      file: file,
-      config: { 
-        displayName: safeDisplayName,
-        mimeType: file.type || 'application/octet-stream'
-      }
-    });
+  // Retry Logic for Initial Upload Handshake
+  let uploadResult;
+  let lastError;
+  for (let i = 0; i < 3; i++) {
+    try {
+      uploadResult = await ai.files.upload({
+        file: file,
+        config: { 
+          displayName: safeDisplayName,
+          mimeType: file.type || 'application/octet-stream'
+        }
+      });
+      break; // Success
+    } catch (e: any) {
+      lastError = e;
+      console.warn(`Upload attempt ${i+1} failed. Retrying...`, e);
+      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+    }
+  }
 
+  if (!uploadResult) {
+     throw lastError || new Error("Upload handshake failed.");
+  }
+
+  try {
     let fileInfo = await ai.files.get({ name: uploadResult.name });
     let pollAttempts = 0;
-    const MAX_POLL_ATTEMPTS = 60; // 5 mins max wait
+    const MAX_POLL_ATTEMPTS = 60; // 10 mins max wait (Increased from 5)
     
     while (fileInfo.state === 'PROCESSING' && pollAttempts < MAX_POLL_ATTEMPTS) {
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 10000)); // Check every 10s
       fileInfo = await ai.files.get({ name: uploadResult.name });
       pollAttempts++;
     }
@@ -145,7 +161,7 @@ export const analyzeContent = async (
     style?: string; 
     keywords?: string; 
     originalText?: string; 
-    geography?: string;
+    geography?: string; 
     targetAudience?: string;
     targetLanguage?: string;
     demographics?: string;
@@ -171,7 +187,8 @@ export const analyzeContent = async (
 
     if (mode === AppMode.TREND_HUNTER) {
       if (!config.niche) throw new Error("Niche is required for Trend Hunter.");
-      promptText = MODE_PROMPTS.TREND_HUNTER(config.niche, currentDate);
+      // PASS PLATFORM TO TREND HUNTER
+      promptText = MODE_PROMPTS.TREND_HUNTER(config.niche, platform, currentDate);
     } else {
       if (config.brandGuidelines) {
         promptText += BRAND_GUARD_INSTRUCTION(config.brandGuidelines) + "\n\n";
@@ -206,7 +223,7 @@ export const analyzeContent = async (
                parts.push(part);
              } catch (uploadErr: any) {
                // FALLBACK: If it's a video and upload failed, extract frames
-               if (file.type.startsWith('video/') && uploadErr.message === "UPLOAD_FAILED_TRIGGER_FALLBACK") {
+               if (file.type.startsWith('video/') && (uploadErr.message === "UPLOAD_FAILED_TRIGGER_FALLBACK" || uploadErr.message?.includes('Network Error'))) {
                  console.warn(`Direct upload failed for ${file.name}. Switching to Frame Analysis.`);
                  const frames = await extractFramesFromVideo(file, 5); // Get 5 frames
                  parts.push(...frames);
