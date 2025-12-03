@@ -25,7 +25,7 @@ const RefineView: React.FC<RefineViewProps> = ({ config, setConfig, platform, se
   useEffect(() => {
     setConfig((prev: any) => ({
        ...prev,
-       contentFormat: PLATFORM_FORMATS[platform][0]
+       contentFormat: PLATFORM_FORMATS[platform]?.[0] || 'Post'
     }));
   }, [platform]);
 
@@ -89,7 +89,7 @@ const RefineView: React.FC<RefineViewProps> = ({ config, setConfig, platform, se
               onChange={(e) => setConfig({...config, contentFormat: e.target.value})}
               className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-xl p-3 outline-none focus:border-pink-500 transition-colors"
             >
-              {PLATFORM_FORMATS[platform].map((fmt) => (
+              {PLATFORM_FORMATS[platform]?.map((fmt) => (
                  <option key={fmt} value={fmt}>{fmt}</option>
               ))}
             </select>

@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "VEER_SYSTEM_RESET_V7";
+const CACHE_NAME = "VEER_SYSTEM_RESET_V12_NUCLEAR";
 const urlsToCache = [
   "/",
   "/index.html"

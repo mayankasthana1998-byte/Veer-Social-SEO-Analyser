@@ -30,7 +30,6 @@ interface ConfigState {
   tone: string[];
   engagementGoal: string[];
   contentFormat: string;
-  // Refine Specific
   refinePlatform?: Platform;
   refineFormat?: string;
 }
@@ -442,7 +441,7 @@ const App: React.FC = () => {
 
       {/* FOOTER VER CHECK */}
       <footer className="fixed bottom-4 left-0 w-full text-center pointer-events-none">
-         <p className="text-[10px] text-slate-800 font-mono">System v7.0 (Hard Reset)</p>
+         <p className="text-[10px] text-slate-800 font-mono">System v12.0 (Deep Refresh)</p>
       </footer>
     </div>
   );

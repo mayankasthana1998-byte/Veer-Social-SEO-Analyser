@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- ANTI-CACHE HEADERS -->
+    <!-- ANTI-CACHE HEADERS (Strict Mode) -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
@@ -51,7 +51,8 @@
       ::-webkit-scrollbar-thumb { background: #4338ca; border-radius: 4px; }
       ::-webkit-scrollbar-thumb:hover { background: #6366f1; }
     </style>
-  <script type="importmap">
+    <!-- NO IMPORTMAP HERE. VITE HANDLES IT. -->
+<script type="importmap">
 {
   "imports": {
     "react/": "https://aistudiocdn.com/react@^19.2.1/",
