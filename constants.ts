@@ -4,6 +4,50 @@ import { HookType, Platform } from "./types";
 export const MAX_FILE_SIZE_MB = 1024; // 1 GB
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
+export const TIMING_DATA: Record<Platform, { 
+  bestTimeIST: string, 
+  gapTimeIST: string,
+  viralWindow: string, 
+  tips: string 
+}> = {
+  [Platform.INSTAGRAM]: {
+    bestTimeIST: "6:00 PM - 9:00 PM",
+    gapTimeIST: "11:15 AM (Lunch Pre-Load)",
+    viralWindow: "2-4 Weeks",
+    tips: "Reels posted at 11:15 AM get batch-tested before the 1PM rush."
+  },
+  [Platform.TIKTOK]: {
+    bestTimeIST: "7:00 PM - 10:00 PM",
+    gapTimeIST: "3:30 PM (School Exit)",
+    viralWindow: "72 Hours",
+    tips: "Post at 3:30 PM to catch the Gen-Z wave before professionals clock out."
+  },
+  [Platform.LINKEDIN]: {
+    bestTimeIST: "9:00 AM - 11:00 AM",
+    gapTimeIST: "8:15 AM (Commute Read)",
+    viralWindow: "3-6 Months",
+    tips: "PDFs at 8:15 AM capture mobile commuters with high dwell time."
+  },
+  [Platform.YOUTUBE]: {
+    bestTimeIST: "12:00 PM - 3:00 PM",
+    gapTimeIST: "5:45 PM (Dopamine Bridge)",
+    viralWindow: "Days (Shorts) / Months (Long)",
+    tips: "Shorts at 5:45 PM bridge the gap between work and evening leisure."
+  },
+  [Platform.TWITTER]: {
+    bestTimeIST: "8:00 PM - 10:00 PM",
+    gapTimeIST: "8:30 AM (News Cycle)",
+    viralWindow: "24 Hours",
+    tips: "Morning threads catch the first wave of news readers."
+  },
+  [Platform.FACEBOOK]: {
+    bestTimeIST: "1:00 PM - 4:00 PM",
+    gapTimeIST: "7:00 AM (Family Check)",
+    viralWindow: "1-2 Weeks",
+    tips: "Early morning posts circulate in family groups throughout the day."
+  }
+};
+
 export const SYSTEM_INSTRUCTION = `
 You are SocialSEO AI, the world's most advanced Social Media Algorithm Architect & Behavioral Psychologist (Identity: v.Andromeda Update).
 Your Mission: Ingest multi-modal content to generate scientifically optimized viral metadata.

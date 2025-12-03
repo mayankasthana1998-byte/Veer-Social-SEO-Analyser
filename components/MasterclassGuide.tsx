@@ -1,21 +1,23 @@
 
 import React, { useState } from 'react';
-import { X, BookOpen, Layers, Cpu, Users } from 'lucide-react';
+import { X, BookOpen, Layers, Cpu, Users, Clock } from 'lucide-react';
 import AcademyManual from './academy/AcademyManual';
 import AcademyAlgorithms from './academy/AcademyAlgorithms';
 import AcademyEngine from './academy/AcademyEngine';
 import AcademyCases from './academy/AcademyCases';
+import AcademyTiming from './academy/AcademyTiming';
 
 interface MasterclassGuideProps {
   onClose: () => void;
 }
 
 const MasterclassGuide: React.FC<MasterclassGuideProps> = ({ onClose }) => {
-  const [activeTab, setActiveTab] = useState<'manual' | 'algorithms' | 'engine' | 'usecases'>('manual');
+  const [activeTab, setActiveTab] = useState<'manual' | 'algorithms' | 'engine' | 'usecases' | 'timing'>('manual');
 
   const tabs = [
     { id: 'manual', label: 'Operator Manual', icon: BookOpen },
     { id: 'algorithms', label: 'Algorithm Secrets', icon: Layers },
+    { id: 'timing', label: 'Viral Timing', icon: Clock },
     { id: 'engine', label: 'How We Crack It', icon: Cpu },
     { id: 'usecases', label: 'Use Cases', icon: Users },
   ];
@@ -32,7 +34,7 @@ const MasterclassGuide: React.FC<MasterclassGuideProps> = ({ onClose }) => {
             <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
               <span className="text-indigo-500">◆</span> KNOWLEDGE BASE
             </h2>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2 pl-5">Tactical Data v2.0</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2 pl-5">Tactical Data v3.0</p>
           </div>
           
           <div className="flex-1 p-6 space-y-2">
@@ -107,6 +109,7 @@ const MasterclassGuide: React.FC<MasterclassGuideProps> = ({ onClose }) => {
           <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-16">
             {activeTab === 'manual' && <AcademyManual />}
             {activeTab === 'algorithms' && <AcademyAlgorithms />}
+            {activeTab === 'timing' && <AcademyTiming />}
             {activeTab === 'engine' && <AcademyEngine />}
             {activeTab === 'usecases' && <AcademyCases />}
           </div>

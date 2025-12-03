@@ -1,10 +1,9 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { 
   Instagram, Linkedin, Youtube, Music2, Twitter, Facebook, 
-  Target, ShieldCheck, Sliders, Upload 
+  Target, ShieldCheck, Sliders 
 } from 'lucide-react';
-import { Platform, FileInput, AppMode } from '../../types';
+import { Platform, FileInput } from '../../types';
 import FileUpload from '../FileUpload';
 
 interface CreateViewProps {
@@ -58,15 +57,15 @@ const CreateView: React.FC<CreateViewProps> = ({
       case Platform.INSTAGRAM:
         return 'bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 text-white border-pink-400 shadow-[0_0_20px_-5px_rgba(236,72,153,0.5)]';
       case Platform.TIKTOK:
-        return 'bg-black text-white border-cyan-400 shadow-[0_0_20px_-5px_rgba(34,211,238,0.5)] border-l-4 border-l-cyan-400 border-r-4 border-r-red-500'; // TikTok Glitch vibe
+        return 'bg-black text-white border-cyan-400 shadow-[0_0_20px_-5px_rgba(34,211,238,0.5)] border-l-4 border-l-cyan-400 border-r-4 border-r-red-500'; 
       case Platform.YOUTUBE:
-        return 'bg-red-600 text-white border-red-500 shadow-[0_0_20px_-5px_rgba(220,38,38,0.5)]';
+        return 'bg-[#FF0000] text-white border-red-500 shadow-[0_0_20px_-5px_rgba(220,38,38,0.5)]';
       case Platform.TWITTER:
-        return 'bg-sky-500 text-white border-sky-400 shadow-[0_0_20px_-5px_rgba(14,165,233,0.5)]'; // Using Blue as requested
+        return 'bg-[#1DA1F2] text-white border-sky-400 shadow-[0_0_20px_-5px_rgba(29,161,242,0.5)]';
       case Platform.LINKEDIN:
-        return 'bg-[#0077b5] text-white border-blue-400 shadow-[0_0_20px_-5px_rgba(59,130,246,0.5)]';
+        return 'bg-[#0077b5] text-white border-blue-400 shadow-[0_0_20px_-5px_rgba(0,119,181,0.5)]';
       case Platform.FACEBOOK:
-        return 'bg-[#1877F2] text-white border-blue-500 shadow-[0_0_20px_-5px_rgba(37,99,235,0.5)]';
+        return 'bg-[#1877F2] text-white border-blue-500 shadow-[0_0_20px_-5px_rgba(24,119,242,0.5)]';
       default:
         return 'bg-indigo-600 text-white border-indigo-500';
     }
@@ -171,7 +170,6 @@ const CreateView: React.FC<CreateViewProps> = ({
                     <Target className="w-3 h-3" /> Audience Matrix
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                     {/* Manual Inputs for Targeting */}
                      <input 
                         type="text"
                         placeholder="Geography (e.g. NYC)"
