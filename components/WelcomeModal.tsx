@@ -18,7 +18,7 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ onClose, onOpenAcademy }) =
         <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none"></div>
         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -z-10"></div>
         
-        <div className="bg-slate-950/80 backdrop-blur-md rounded-[2.3rem] p-8 md:p-10 relative z-10">
+        <div className="bg-slate-950/80 backdrop-blur-md rounded-[2.3rem] p-6 md:p-10 relative z-10">
           
           <div className="flex justify-center mb-6">
              <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 rotate-3">
@@ -26,14 +26,14 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ onClose, onOpenAcademy }) =
              </div>
           </div>
 
-          <h2 className="text-3xl font-black text-center text-white mb-3 tracking-tight">
+          <h2 className="text-2xl md:text-3xl font-black text-center text-white mb-3 tracking-tight">
             System Online
           </h2>
           <p className="text-center text-indigo-400 text-xs font-bold uppercase tracking-widest mb-6">
             Welcome to the Andromeda Engine
           </p>
 
-          <p className="text-slate-400 text-center text-sm leading-relaxed mb-8">
+          <p className="text-slate-400 text-center text-xs md:text-sm leading-relaxed mb-8">
             You have accessed the world's most advanced <strong>Social SEO Architect</strong>. 
             This neural interface is designed to reverse-engineer viral algorithms and generate high-performance metadata.
           </p>

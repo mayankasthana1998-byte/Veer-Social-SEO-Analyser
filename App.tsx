@@ -440,22 +440,23 @@ const App: React.FC = () => {
                 <Search className="w-5 h-5" />
              </button>
 
+             {/* ACADEMY BUTTON - RESPONSIVE */}
              <button
                onClick={() => setShowMasterclass(true)}
-               className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 hover:text-white rounded-full transition-all border border-indigo-500/20 hover:border-indigo-500/50"
+               className="flex items-center gap-2 px-3 md:px-5 py-2 md:py-2.5 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 hover:text-white rounded-full transition-all border border-indigo-500/20 hover:border-indigo-500/50"
              >
                <BookOpen className="w-4 h-4" />
-               <span className="text-xs font-black tracking-wide">ACADEMY</span>
+               <span className="text-xs font-black tracking-wide hidden md:block">ACADEMY</span>
              </button>
 
-             {/* API KEY BUTTON - NEW */}
+             {/* API KEY BUTTON - RESPONSIVE */}
              <button
                onClick={() => { if(confirm('Change or Disconnect API Key?')) clearApiKey(); }}
-               className="hidden md:flex items-center gap-2 px-4 py-2 bg-black/40 rounded-full border border-white/5 group hover:border-red-500/30 transition-all hover:bg-red-500/10"
+               className="flex items-center gap-2 px-3 md:px-4 py-2 bg-black/40 rounded-full border border-white/5 group hover:border-red-500/30 transition-all hover:bg-red-500/10"
                title="API Key Settings"
              >
                 <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse group-hover:bg-red-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider group-hover:text-red-400">SYSTEM ONLINE</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider group-hover:text-red-400 hidden md:block">SYSTEM ONLINE</span>
              </button>
           </div>
         </header>
@@ -591,7 +592,7 @@ const App: React.FC = () => {
                     <div className="flex items-center justify-between">
                        <span className="text-[10px] font-bold text-slate-500">OR UPLOAD GUIDE</span>
                        <div className="scale-75 origin-right">
-                          <FileUpload files={brandFiles} setFiles={setBrandFiles} />
+                          <FileUpload files={brandFiles} setFiles={setFiles} />
                        </div>
                     </div>
                   </div>
