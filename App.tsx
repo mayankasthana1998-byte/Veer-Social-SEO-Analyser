@@ -30,6 +30,9 @@ interface ConfigState {
   tone: string[];
   engagementGoal: string[];
   contentFormat: string;
+  // Refine Specific
+  refinePlatform?: Platform;
+  refineFormat?: string;
 }
 
 const App: React.FC = () => {
@@ -53,7 +56,9 @@ const App: React.FC = () => {
     niche: '',
     tone: [],
     engagementGoal: [],
-    contentFormat: ''
+    contentFormat: '',
+    refinePlatform: Platform.INSTAGRAM,
+    refineFormat: ''
   });
 
   // --- UI STATE ---
@@ -106,7 +111,7 @@ const App: React.FC = () => {
   const restoreFromHistory = (item: HistoryItem) => {
     setMode(item.mode);
     if (item.platform) setPlatform(item.platform);
-    setFiles([]); // Cannot restore file objects
+    setFiles([]); 
     if (item.mode === AppMode.TREND_HUNTER) {
       setTrendResults(item.data as TrendItem[]);
       setResult(null);
@@ -319,8 +324,9 @@ const App: React.FC = () => {
                  <BookOpen className="w-4 h-4" />
                  <span className="text-xs font-bold hidden sm:block">ACADEMY</span>
               </button>
-              <button onClick={() => {if(confirm('Disconnect?')) clearApiKey()}} className="p-2.5 bg-slate-900 hover:bg-red-500/20 rounded-full text-slate-400 hover:text-red-400 transition-colors">
-                 <Key className="w-4 h-4" />
+              <button onClick={() => {if(confirm('Disconnect?')) clearApiKey()}} className="flex items-center gap-2 px-3 py-2.5 bg-slate-900 hover:bg-red-500/20 rounded-full text-slate-400 hover:text-red-400 transition-colors">
+                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                 <span className="text-xs font-bold hidden sm:block">SYSTEM ONLINE</span>
               </button>
            </div>
         </div>
@@ -347,7 +353,14 @@ const App: React.FC = () => {
                 brandFiles={brandFiles} setBrandFiles={setBrandFiles}
              />
            )}
-           {mode === AppMode.REFINE && <RefineView config={config} setConfig={setConfig} />}
+           {mode === AppMode.REFINE && (
+             <RefineView 
+                config={config} 
+                setConfig={setConfig} 
+                platform={platform} 
+                setPlatform={setPlatform} 
+             />
+           )}
            {mode === AppMode.COMPETITOR_SPY && (
              <SpyView files={files} setFiles={setFiles} config={config} setConfig={setConfig} />
            )}
@@ -429,7 +442,7 @@ const App: React.FC = () => {
 
       {/* FOOTER VER CHECK */}
       <footer className="fixed bottom-4 left-0 w-full text-center pointer-events-none">
-         <p className="text-[10px] text-slate-800 font-mono">v3.1 (Stable)</p>
+         <p className="text-[10px] text-slate-800 font-mono">System v7.0 (Hard Reset)</p>
       </footer>
     </div>
   );
