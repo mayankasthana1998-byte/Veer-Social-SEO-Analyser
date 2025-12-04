@@ -1,4 +1,5 @@
 
+
 import React, { useEffect } from 'react';
 import { 
   Instagram, Linkedin, Youtube, Music2, Twitter, Facebook, 
@@ -89,7 +90,7 @@ const CreateView: React.FC<CreateViewProps> = ({
         <div className="lg:col-span-5 space-y-6">
           
           {/* 1. PLATFORM SELECTOR */}
-          <div id="tour-step-2-platforms" className="bg-slate-900/60 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+          <div className="bg-slate-900/60 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
             <label className="text-[10px] font-black text-slate-500 uppercase mb-4 block tracking-widest pl-2">
                Destination Protocol
             </label>
@@ -115,7 +116,7 @@ const CreateView: React.FC<CreateViewProps> = ({
           </div>
 
           {/* 2. TARGETING */}
-          <div id="tour-step-4-targeting" className="bg-slate-900/60 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-xl shadow-2xl">
+          <div className="bg-slate-900/60 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-xl shadow-2xl">
              <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 pl-2 mb-4">
                 <Sliders className="w-3 h-3" /> Hyper-Targeting
              </label>
@@ -241,7 +242,7 @@ const CreateView: React.FC<CreateViewProps> = ({
 
         {/* RIGHT COLUMN: UPLOAD */}
         <div className="lg:col-span-7">
-          <div id="tour-step-3-upload" className="sticky top-24">
+          <div className="sticky top-24">
             <FileUpload files={files} setFiles={setFiles} multiple={true} />
           </div>
         </div>
