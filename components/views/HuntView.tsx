@@ -42,14 +42,19 @@ const HuntView: React.FC<HuntViewProps> = ({
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
       
+      <div className="text-center">
+        <div className="inline-block p-4 bg-orange-500/10 rounded-2xl border border-orange-500/20 mb-4">
+          <Flame className="w-8 h-8 text-orange-500" />
+        </div>
+        <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">THE SCOUT</h2>
+        <p className="text-slate-400 mt-2 max-w-xl mx-auto">
+          Scan the live web for breaking trends, viral audio, and high-ROI topics in your niche before they saturate.
+        </p>
+      </div>
+
       {/* 1. SEARCH CONFIG */}
       <div className="bg-slate-900/60 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
          <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
-
-         <div className="mb-8 text-center">
-            <h2 className="text-2xl font-black text-white mb-2 tracking-tight">LIVE TREND HUNTER</h2>
-            <p className="text-sm text-slate-400 font-medium">Scan Google & Creative Centers for high-ROI opportunities.</p>
-         </div>
 
          {/* Platform Selector */}
          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-8">

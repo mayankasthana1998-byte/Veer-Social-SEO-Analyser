@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AppMode, Platform, AnalysisResult, FileInput, TrendItem, HistoryItem, ConfigState } from './types';
 import { analyzeContent } from './services/geminiService';
@@ -5,6 +6,7 @@ import AnalysisResultView from './components/AnalysisResultView';
 import MasterclassGuide from './components/MasterclassGuide';
 import GlobalSearch from './components/GlobalSearch';
 import WelcomeModal from './components/WelcomeModal';
+import OnboardingTour from './components/OnboardingTour';
 import CreateView from './components/views/CreateView';
 import RefineView from './components/views/RefineView';
 import SpyView from './components/views/SpyView';
@@ -47,6 +49,7 @@ const App: React.FC = () => {
   const [showMasterclass, setShowMasterclass] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [isTourActive, setIsTourActive] = useState(false);
   const [copiedTrendIndex, setCopiedTrendIndex] = useState<number | null>(null);
 
   const [history, setHistory] = useState<HistoryItem[]>(() => {
@@ -109,10 +112,21 @@ const App: React.FC = () => {
       setShowGatekeeper(false);
     }
     const hasSeenWelcome = localStorage.getItem('HAS_SEEN_WELCOME');
+    const hasSeenTour = localStorage.getItem('VEER_HAS_SEEN_TOUR');
     if (!hasSeenWelcome && !showGatekeeper) {
       setTimeout(() => setShowWelcome(true), 1000);
+    } else if (hasSeenWelcome && !hasSeenTour && !showGatekeeper) {
+      setTimeout(() => {
+        setMode(AppMode.GENERATION);
+        setIsTourActive(true);
+      }, 500);
     }
   }, [showGatekeeper]);
+
+  const handleTourClose = () => {
+    setIsTourActive(false);
+    localStorage.setItem('VEER_HAS_SEEN_TOUR', 'true');
+  };
 
   const handleSaveKey = () => {
     const keyToSave = apiKeyInput.trim();
@@ -274,7 +288,7 @@ const App: React.FC = () => {
               <span className="font-black text-lg tracking-tighter text-white">SocialSEO</span>
            </div>
 
-           <div className="hidden md:flex bg-slate-900/50 p-1 rounded-full border border-white/5">
+           <div id="tour-step-1-modes" className="hidden md:flex bg-slate-900/50 p-1 rounded-full border border-white/5">
               <ModeTab m={AppMode.GENERATION} label="Create" icon={Sparkles} />
               <ModeTab m={AppMode.REFINE} label="Refine" icon={Settings2} />
               <ModeTab m={AppMode.COMPETITOR_SPY} label="Spy" icon={BrainCircuit} />
@@ -340,6 +354,7 @@ const App: React.FC = () => {
 
         <div className="max-w-2xl mx-auto mb-12">
            <button
+              id="tour-step-5-analyze"
               onClick={handleAnalyze}
               disabled={isAnalyzing}
               className="relative group w-full bg-white text-black font-black text-xl py-6 rounded-2xl transition-all hover:scale-[1.02] shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] flex items-center justify-center gap-3 overflow-hidden disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed"
@@ -396,6 +411,7 @@ const App: React.FC = () => {
       {showWelcome && <WelcomeModal onClose={() => { setShowWelcome(false); localStorage.setItem('HAS_SEEN_WELCOME', 'true'); }} onOpenAcademy={() => { setShowWelcome(false); setShowMasterclass(true); }} />}
       {showMasterclass && <MasterclassGuide onClose={() => setShowMasterclass(false)} />}
       <GlobalSearch isOpen={showSearch} onClose={() => setShowSearch(false)} history={history} onSelect={restoreFromHistory} onDelete={deleteFromHistory} onClear={clearHistory} />
+      <OnboardingTour isOpen={isTourActive} onClose={handleTourClose} />
 
       <footer className="fixed bottom-4 left-0 w-full text-center pointer-events-none">
          <p className="text-[10px] text-slate-800 font-mono">System v20.0 (Full Sync)</p>

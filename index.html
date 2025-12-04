@@ -12,16 +12,7 @@
     <meta name="theme-color" content="#4f46e5" />
     <meta name="description" content="Advanced social media algorithmic architect for generating viral metadata and competitor analysis." />
     
-    <!-- PWA Meta Tags -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Veer SEO">
-
     <title>SocialSEO AI - Andromeda Engine</title>
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/icons/pwa-192x192.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
@@ -70,24 +61,5 @@
     <div class="bg-noise"></div>
     <div id="root" class="relative z-10"></div>
     <script type="module" src="/index.tsx"></script>
-    
-    <!-- PWA Service Worker Registration -->
-    <script>
-      // Conditional Registration: Only register in production/localhost, NOT in AI Studio preview
-      const isPreview = window.location.hostname.includes('usercontent.goog') || 
-                        window.location.hostname.includes('ai.studio');
-
-      if ('serviceWorker' in navigator && !isPreview) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./service-worker.js')
-            .then((registration) => {
-              console.log('SW Registered: ', registration.scope);
-            })
-            .catch((err) => {
-              console.log('SW Registration Failed: ', err);
-            });
-        });
-      }
-    </script>
   </body>
 </html>

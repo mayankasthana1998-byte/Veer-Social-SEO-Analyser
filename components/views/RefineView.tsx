@@ -43,6 +43,15 @@ const RefineView: React.FC<RefineViewProps> = ({ config, setConfig, platform, se
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
+      <div className="text-center mb-12">
+        <div className="inline-block p-4 bg-pink-500/10 rounded-2xl border border-pink-500/20 mb-4">
+          <Settings2 className="w-8 h-8 text-pink-400" />
+        </div>
+        <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">THE EDITOR</h2>
+        <p className="text-slate-400 mt-2 max-w-xl mx-auto">
+          Polish rough drafts, voice notes, or existing text into high-impact social copy optimized for your chosen platform.
+        </p>
+      </div>
       <div className="bg-slate-900/60 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
          <div className="absolute top-0 right-0 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
          

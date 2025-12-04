@@ -233,45 +233,24 @@ export const analyzeContent = async (
     if (mode !== AppMode.TREND_HUNTER) {
       for (const file of files) {
         try {
-          // Large file logic > 20MB
-          if (file.size > 20 * 1024 * 1024) { 
-             try {
-               const part = await uploadLargeFile(ai, file);
-               parts.push(part);
-             } catch (uploadErr: any) {
-               if (file.type.startsWith('video/') && (uploadErr.message === "UPLOAD_FAILED_TRIGGER_FALLBACK" || uploadErr.message?.includes('Network Error'))) {
-                 console.warn(`Direct upload failed for ${file.name}. Switching to Frame Analysis.`);
-                 const frames = await extractFramesFromVideo(file, 5); 
-                 parts.push(...frames);
-                 parts.push({ text: `[SYSTEM NOTE: The following images are key frames extracted from the video file "${file.name}". Analyze them as a continuous video sequence.]` });
-               } else {
-                 throw uploadErr;
-               }
-             }
+          if (file.type.startsWith('video/')) {
+            console.log(`Video detected: ${file.name}. Forcing frame extraction mode.`);
+            const frames = await extractFramesFromVideo(file, 5);
+            parts.push(...frames);
+            parts.push({ text: `[SYSTEM NOTE: The following images are key frames extracted from the video file "${file.name}". Analyze them as a continuous video sequence.]` });
           } else {
-            // Small file logic
-            // Note: If it is a video < 20MB, we can try sending it directly. 
-            // However, browsers often struggle with direct base64 video. 
-            // We'll trust the original logic but fallback to frames if base64 conversion fails or for better analysis.
-            const part = await fileToPart(file);
-            parts.push(part);
+            // For non-video files (images, PDFs), use the existing size-based logic.
+            if (file.size > 20 * 1024 * 1024) { // Large file logic
+              const part = await uploadLargeFile(ai, file);
+              parts.push(part);
+            } else { // Small file logic
+              const part = await fileToPart(file);
+              parts.push(part);
+            }
           }
         } catch (e) {
           console.error(`File processing error for ${file.name}:`, e);
-          
-          // Last ditch effort for small videos that failed fileToPart
-          if (file.type.startsWith('video/')) {
-             try {
-                const frames = await extractFramesFromVideo(file, 5);
-                parts.push(...frames);
-                parts.push({ text: `[SYSTEM NOTE: Key frames from "${file.name}"]` });
-                continue;
-             } catch(frameErr) {
-                // Ignore frame error and throw original
-             }
-          }
-          
-          throw new Error(`Failed to process ${file.name}. If it's a large video, try compressing it.`);
+          throw new Error(`Failed to process ${file.name}.`);
         }
       }
     }
