@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { AppMode, Platform, AnalysisResult, FileInput, TrendItem, HistoryItem } from './types';
+import { AppMode, Platform, AnalysisResult, FileInput, TrendItem, HistoryItem, ConfigState } from './types';
 import { analyzeContent } from './services/geminiService';
 import AnalysisResultView from './components/AnalysisResultView';
 import MasterclassGuide from './components/MasterclassGuide';
@@ -11,37 +10,14 @@ import RefineView from './components/views/RefineView';
 import SpyView from './components/views/SpyView';
 import HuntView from './components/views/HuntView';
 
-import { 
-  Sparkles, BrainCircuit, Loader2, Settings2, Flame, Search, 
-  BookOpen, Key, ArrowUpRight
-} from 'lucide-react';
-
-interface ConfigState {
-  goal: string;
-  style: string;
-  keywords: string;
-  originalText: string;
-  geography: string;
-  targetAudience: string;
-  targetLanguage: string;
-  demographics: string;
-  brandGuidelines: string;
-  niche: string;
-  tone: string[];
-  engagementGoal: string[];
-  contentFormat: string;
-  refinePlatform?: Platform;
-  refineFormat?: string;
-}
+import { Sparkles, BrainCircuit, Loader2, Settings2, Flame, Search, BookOpen, ArrowUpRight } from 'lucide-react';
 
 const App: React.FC = () => {
-  // --- GLOBAL STATE ---
   const [mode, setMode] = useState<AppMode>(AppMode.GENERATION);
   const [platform, setPlatform] = useState<Platform>(Platform.INSTAGRAM);
   const [files, setFiles] = useState<FileInput[]>([]);
   const [brandFiles, setBrandFiles] = useState<FileInput[]>([]);
   
-  // --- CONFIG STATE ---
   const [config, setConfig] = useState<ConfigState>({
     goal: 'Viral Growth',
     style: 'Authentic',
@@ -60,7 +36,6 @@ const App: React.FC = () => {
     refineFormat: ''
   });
 
-  // --- UI STATE ---
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [trendResults, setTrendResults] = useState<TrendItem[] | null>(null);
@@ -74,7 +49,6 @@ const App: React.FC = () => {
   const [showWelcome, setShowWelcome] = useState(false);
   const [copiedTrendIndex, setCopiedTrendIndex] = useState<number | null>(null);
 
-  // --- HISTORY LOGIC ---
   const [history, setHistory] = useState<HistoryItem[]>(() => {
     const saved = localStorage.getItem('SOCIAL_SEO_HISTORY');
     return saved ? JSON.parse(saved) : [];
@@ -121,7 +95,6 @@ const App: React.FC = () => {
     setShowSearch(false);
   };
 
-  // --- API KEY LOGIC ---
   const [apiKey, setApiKey] = useState<string>('');
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showGatekeeper, setShowGatekeeper] = useState(true);
@@ -161,7 +134,6 @@ const App: React.FC = () => {
     setShowGatekeeper(true);
   };
 
-  // --- ANALYSIS LOGIC ---
   const handleAnalyze = async () => {
     if (mode === AppMode.GENERATION && files.length === 0) { alert("Upload media first."); return; }
     if (mode === AppMode.REFINE && !config.originalText) { alert("Need text input."); return; }
@@ -199,7 +171,6 @@ const App: React.FC = () => {
     }
   };
 
-  // --- SIMULATED PROGRESS ---
   useEffect(() => {
     let interval: any;
     if (isAnalyzing) {
@@ -240,7 +211,6 @@ const App: React.FC = () => {
     setTimeout(() => setCopiedTrendIndex(null), 2000);
   };
 
-  // --- RENDER HELPERS ---
   const ModeTab = ({ m, label, icon: Icon }: { m: AppMode, label: string, icon: any }) => (
     <button
       onClick={() => { setMode(m); setResult(null); setTrendResults(null); if(m !== AppMode.TREND_HUNTER) setFiles([]); }}
@@ -255,7 +225,6 @@ const App: React.FC = () => {
     </button>
   );
 
-  // --- GATEKEEPER VIEW ---
   if (showGatekeeper) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden font-inter">
@@ -292,12 +261,10 @@ const App: React.FC = () => {
     );
   }
 
-  // --- MAIN APP VIEW ---
   return (
     <div className="min-h-screen bg-[#020205] text-slate-200 pb-20 font-inter selection:bg-indigo-500/30">
       <div className="fixed inset-0 bg-grid z-0"></div>
       
-      {/* HEADER */}
       <header className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
            <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.location.reload()}>
@@ -307,7 +274,6 @@ const App: React.FC = () => {
               <span className="font-black text-lg tracking-tighter text-white">SocialSEO</span>
            </div>
 
-           {/* DESKTOP NAV */}
            <div className="hidden md:flex bg-slate-900/50 p-1 rounded-full border border-white/5">
               <ModeTab m={AppMode.GENERATION} label="Create" icon={Sparkles} />
               <ModeTab m={AppMode.REFINE} label="Refine" icon={Settings2} />
@@ -330,7 +296,6 @@ const App: React.FC = () => {
            </div>
         </div>
         
-        {/* MOBILE NAV */}
         <div className="md:hidden flex justify-between px-4 py-2 border-t border-white/5 overflow-x-auto gap-2 no-scrollbar">
            <ModeTab m={AppMode.GENERATION} label="Create" icon={Sparkles} />
            <ModeTab m={AppMode.REFINE} label="Refine" icon={Settings2} />
@@ -339,10 +304,8 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* MAIN CONTENT AREA */}
       <main className="max-w-6xl mx-auto px-4 pt-12 relative z-10">
         
-        {/* VIEW ROUTER */}
         <div className="mb-12">
            {mode === AppMode.GENERATION && (
              <CreateView 
@@ -375,7 +338,6 @@ const App: React.FC = () => {
            )}
         </div>
 
-        {/* GLOBAL ACTION BUTTON */}
         <div className="max-w-2xl mx-auto mb-12">
            <button
               onClick={handleAnalyze}
@@ -400,7 +362,6 @@ const App: React.FC = () => {
               )}
            </button>
            
-           {/* ERROR DISPLAY */}
            {error && (
               <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-center">
                  <p className="text-red-400 text-sm font-bold flex items-center justify-center gap-2">
@@ -415,7 +376,6 @@ const App: React.FC = () => {
               </div>
            )}
 
-           {/* LOADING BAR */}
            {isAnalyzing && (
               <div className="mt-6">
                  <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">
@@ -429,19 +389,16 @@ const App: React.FC = () => {
            )}
         </div>
 
-        {/* RESULTS RENDER */}
         {result && <AnalysisResultView result={result} mode={mode} />}
 
       </main>
 
-      {/* MODALS */}
       {showWelcome && <WelcomeModal onClose={() => { setShowWelcome(false); localStorage.setItem('HAS_SEEN_WELCOME', 'true'); }} onOpenAcademy={() => { setShowWelcome(false); setShowMasterclass(true); }} />}
       {showMasterclass && <MasterclassGuide onClose={() => setShowMasterclass(false)} />}
       <GlobalSearch isOpen={showSearch} onClose={() => setShowSearch(false)} history={history} onSelect={restoreFromHistory} onDelete={deleteFromHistory} onClear={clearHistory} />
 
-      {/* FOOTER VER CHECK */}
       <footer className="fixed bottom-4 left-0 w-full text-center pointer-events-none">
-         <p className="text-[10px] text-slate-800 font-mono">System v12.0 (Deep Refresh)</p>
+         <p className="text-[10px] text-slate-800 font-mono">System v20.0 (Full Sync)</p>
       </footer>
     </div>
   );

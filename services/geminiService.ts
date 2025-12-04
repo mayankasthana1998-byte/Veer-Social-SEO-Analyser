@@ -1,11 +1,9 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult, AppMode, Platform, TrendItem } from "../types";
 import { SYSTEM_INSTRUCTION, MODE_PROMPTS, BRAND_GUARD_INSTRUCTION } from "../constants";
 
 const MODEL_NAME = 'gemini-2.5-flash';
 
-// Helper to convert small files to Base64 (InlineData)
 const fileToPart = (file: File): Promise<{ inlineData: { data: string; mimeType: string } }> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -24,29 +22,24 @@ const fileToPart = (file: File): Promise<{ inlineData: { data: string; mimeType:
   });
 };
 
-// --- VIDEO FALLBACK: EXTRACT FRAMES LOCALLY ---
-// This bypasses the Google API CORS limit for large files by sending images instead.
+// VIDEO FALLBACK: EXTRACT FRAMES
 const extractFramesFromVideo = async (videoFile: File, frameCount: number = 5): Promise<any[]> => {
   console.log("Switching to Frame Extraction Strategy...");
-  
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const frames: any[] = [];
-    
-    // Create URL for the video file
     const videoUrl = URL.createObjectURL(videoFile);
     video.src = videoUrl;
     video.muted = true;
     video.playsInline = true;
-    video.crossOrigin = "anonymous"; // Important for local processing
+    video.crossOrigin = "anonymous";
 
     video.onloadedmetadata = async () => {
       const duration = video.duration;
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      
       const interval = duration / (frameCount + 1);
       const timestamps = Array.from({ length: frameCount }, (_, i) => (i + 1) * interval);
 
@@ -57,7 +50,6 @@ const extractFramesFromVideo = async (videoFile: File, frameCount: number = 5): 
             video.onseeked = () => {
               if (ctx) {
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                // Convert to base64
                 const base64Data = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
                 frames.push({
                   inlineData: {
@@ -77,7 +69,6 @@ const extractFramesFromVideo = async (videoFile: File, frameCount: number = 5): 
         reject(err);
       }
     };
-
     video.onerror = () => {
       URL.revokeObjectURL(videoUrl);
       reject(new Error("Failed to load video for frame extraction"));
@@ -85,11 +76,8 @@ const extractFramesFromVideo = async (videoFile: File, frameCount: number = 5): 
   });
 };
 
-// Helper to upload large files via File API
 const uploadLargeFile = async (ai: GoogleGenAI, file: File): Promise<{ fileData: { fileUri: string; mimeType: string } }> => {
   const safeDisplayName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-  
-  // Retry Logic for Initial Upload Handshake
   let uploadResult;
   let lastError;
   for (let i = 0; i < 3; i++) {
@@ -101,10 +89,9 @@ const uploadLargeFile = async (ai: GoogleGenAI, file: File): Promise<{ fileData:
           mimeType: file.type || 'application/octet-stream'
         }
       });
-      break; // Success
+      break; 
     } catch (e: any) {
       lastError = e;
-      console.warn(`Upload attempt ${i+1} failed. Retrying...`, e);
       await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
     }
   }
@@ -116,18 +103,13 @@ const uploadLargeFile = async (ai: GoogleGenAI, file: File): Promise<{ fileData:
   try {
     let fileInfo = await ai.files.get({ name: uploadResult.name });
     let pollAttempts = 0;
-    const MAX_POLL_ATTEMPTS = 60; // 10 mins max wait (Increased from 5)
-    
+    const MAX_POLL_ATTEMPTS = 60;
     while (fileInfo.state === 'PROCESSING' && pollAttempts < MAX_POLL_ATTEMPTS) {
-      await new Promise(resolve => setTimeout(resolve, 10000)); // Check every 10s
+      await new Promise(resolve => setTimeout(resolve, 10000));
       fileInfo = await ai.files.get({ name: uploadResult.name });
       pollAttempts++;
     }
-
-    if (fileInfo.state === 'FAILED') {
-      throw new Error("Processing failed");
-    }
-
+    if (fileInfo.state === 'FAILED') throw new Error("Processing failed");
     return {
       fileData: {
         fileUri: fileInfo.uri,
@@ -135,8 +117,6 @@ const uploadLargeFile = async (ai: GoogleGenAI, file: File): Promise<{ fileData:
       }
     };
   } catch (error: any) {
-    // If ANY error happens during upload (CORS, Network, Size), we throw a specific error
-    // that triggers the fallback mechanism in analyzeContent
     throw new Error("UPLOAD_FAILED_TRIGGER_FALLBACK");
   }
 };
@@ -170,6 +150,8 @@ export const analyzeContent = async (
     tone?: string[];
     engagementGoal?: string[];
     contentFormat?: string;
+    refinePlatform?: Platform;
+    refineFormat?: string;
   }
 ): Promise<AnalysisResult | TrendItem[]> => {
   try {
@@ -187,7 +169,6 @@ export const analyzeContent = async (
 
     if (mode === AppMode.TREND_HUNTER) {
       if (!config.niche) throw new Error("Niche is required for Trend Hunter.");
-      // PASS PLATFORM TO TREND HUNTER
       promptText = MODE_PROMPTS.TREND_HUNTER(config.niche, platform, currentDate);
     } else {
       if (config.brandGuidelines) {
@@ -198,7 +179,8 @@ export const analyzeContent = async (
       if (mode === AppMode.GENERATION) {
         promptText += MODE_PROMPTS.GENERATION(platform, config.engagementGoal || ['Viral Growth'], config.tone || ['Authentic'], config.contentFormat || 'Standard', targeting);
       } else if (mode === AppMode.REFINE) {
-        promptText += MODE_PROMPTS.REFINE(config.originalText || '', config.keywords || '', targeting);
+        // PASS PLATFORM AND FORMAT TO REFINE
+        promptText += MODE_PROMPTS.REFINE(config.originalText || '', config.keywords || '', targeting, config.refinePlatform, config.refineFormat);
       } else if (mode === AppMode.COMPETITOR_SPY) {
         const fileContext = files.length > 0 ? `Analyzing ${files.length} mixed-media inputs.` : 'No files provided.';
         promptText += `MODE C: COMPETITOR SPY. ${fileContext}\n`;
@@ -210,27 +192,23 @@ export const analyzeContent = async (
       }
     }
 
-    // --- SMART FILE HANDLING ---
     const parts: any[] = [{ text: promptText }];
     
     if (mode !== AppMode.TREND_HUNTER) {
       for (const file of files) {
         try {
-          // Attempt direct upload for large files
           if (file.size > 20 * 1024 * 1024) { 
              try {
                const part = await uploadLargeFile(ai, file);
                parts.push(part);
              } catch (uploadErr: any) {
-               // FALLBACK: If it's a video and upload failed, extract frames
                if (file.type.startsWith('video/') && (uploadErr.message === "UPLOAD_FAILED_TRIGGER_FALLBACK" || uploadErr.message?.includes('Network Error'))) {
                  console.warn(`Direct upload failed for ${file.name}. Switching to Frame Analysis.`);
-                 const frames = await extractFramesFromVideo(file, 5); // Get 5 frames
+                 const frames = await extractFramesFromVideo(file, 5); 
                  parts.push(...frames);
-                 // Add context to prompt
                  parts.push({ text: `[SYSTEM NOTE: The following images are key frames extracted from the video file "${file.name}". Analyze them as a continuous video sequence.]` });
                } else {
-                 throw uploadErr; // Rethrow if it's not a video or generic error
+                 throw uploadErr;
                }
              }
           } else {
@@ -351,7 +329,7 @@ export const analyzeContent = async (
 
   } catch (error: any) {
     console.error("Gemini Analysis Error:", error);
-    if (error.message === "MISSING_KEY") throw new Error("API Key is missing. Please re-enter your key.");
+    if (error.message === "MISSING_KEY") throw new Error("API Key is missing.");
     if (error.message?.includes('401') || error.message?.includes('403')) throw new Error("INVALID_KEY");
     if (error.message?.includes('429')) throw new Error("API Quota Exceeded. Wait 1 minute.");
     if (error.message?.includes('503')) throw new Error("Google AI Service temporarily down.");

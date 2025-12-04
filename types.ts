@@ -1,9 +1,8 @@
-
 export enum AppMode {
   GENERATION = 'GENERATION', // Mode A
   REFINE = 'REFINE', // Mode B
   COMPETITOR_SPY = 'COMPETITOR_SPY', // Mode C
-  TREND_HUNTER = 'TREND_HUNTER', // New Mode: Find Trends
+  TREND_HUNTER = 'TREND_HUNTER', // Mode D
 }
 
 export enum Platform {
@@ -63,7 +62,7 @@ export interface AnalysisResult {
     visualTheme: string;
     ctaStrategy: string;
     formula: string;
-    spyMatrix?: CompetitorRow[]; // NEW: For the Chart Format
+    spyMatrix?: CompetitorRow[];
   }; 
 }
 
@@ -105,4 +104,6 @@ export interface ConfigState {
   tone: string[];
   engagementGoal: string[];
   contentFormat: string;
+  refinePlatform?: Platform;
+  refineFormat?: string;
 }

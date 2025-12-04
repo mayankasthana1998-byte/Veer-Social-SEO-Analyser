@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Smartphone, Linkedin, Eye, Youtube, Twitter, Fingerprint, RefreshCcw, Search, Timer } from 'lucide-react';
 
@@ -10,7 +9,6 @@ const AcademyAlgorithms: React.FC = () => {
         <p className="text-lg text-slate-400 font-light">Declassified ranking logic. The "Black Box" explained.</p>
       </header>
 
-      {/* INTRO BLOCK */}
       <div className="bg-slate-900/40 p-8 rounded-[2rem] border border-indigo-500/20">
          <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
             <Fingerprint className="w-6 h-6 text-indigo-400" />
@@ -23,103 +21,80 @@ const AcademyAlgorithms: React.FC = () => {
 
       <div className="grid gap-8">
         
-        {/* INSTAGRAM HACK */}
         <div className="p-8 rounded-[2rem] bg-slate-900/40 border border-white/5 hover:border-pink-500/30 transition-colors group">
           <div className="flex items-center justify-between mb-6">
              <div className="flex items-center gap-4">
                 <div className="p-3 bg-pink-500/10 rounded-xl text-pink-400"><Eye className="w-6 h-6" /></div>
-                <div>
-                   <h3 className="font-bold text-white text-xl">Instagram: The "Carousel Re-Index"</h3>
-                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Reach Multiplier</span>
-                </div>
+                <h3 className="text-2xl font-bold text-white">Instagram</h3>
              </div>
-             <RefreshCcw className="w-6 h-6 text-pink-500/20 group-hover:text-pink-500 transition-colors" />
+             <span className="text-xs font-bold bg-pink-500/20 text-pink-300 px-3 py-1 rounded-full border border-pink-500/30">HACK: CAROUSEL RE-INDEX</span>
           </div>
-          <div className="space-y-4">
-             <div className="bg-black/30 p-4 rounded-xl border border-white/5">
-                <strong className="text-pink-400 text-xs uppercase tracking-widest block mb-1">THE EXPLOIT</strong>
-                <p className="text-slate-300 text-sm">
-                   Instagram's feed hates wasted inventory. If a user scrolls past your Carousel without engaging, the algorithm considers it a "Missed Opportunity."
-                   <br/><br/>
-                   <strong>The Hack:</strong> If you post a Carousel, Instagram will show the <em>first slide</em>. If ignored, it will re-inject the same post 12-24 hours later, displaying the <em>second slide</em>. This gives you <strong>2x impressions</strong> for one post.
-                </p>
-             </div>
-             <div className="flex gap-2">
-                <span className="px-3 py-1 bg-pink-500/10 border border-pink-500/20 rounded-lg text-[10px] font-bold text-pink-300">Slide 1: Visual Hook</span>
-                <span className="px-3 py-1 bg-pink-500/10 border border-pink-500/20 rounded-lg text-[10px] font-bold text-pink-300">Slide 2: Text Hook</span>
-             </div>
+          <p className="text-sm text-slate-400 mb-4 leading-relaxed">
+             Instagram hates wasted inventory. If a user scrolls past your Carousel without engaging, the algorithm considers it a "Missed Opportunity."
+          </p>
+          <div className="bg-black/30 p-5 rounded-2xl border border-white/5">
+             <strong className="text-pink-400 block mb-2 text-xs uppercase tracking-widest">THE EXPLOIT</strong>
+             <p className="text-slate-300 text-sm">
+                If they scroll past Slide 1, Instagram re-injects the post 12 hours later but shows <strong>Slide 2</strong> instead. <br/><br/>
+                <span className="text-white font-bold">Action:</span> Use a "Visual Hook" on Slide 1 and a "Text Hook" on Slide 2. This gives you two chances for one impression.
+             </p>
           </div>
         </div>
 
-        {/* LINKEDIN HACK */}
         <div className="p-8 rounded-[2rem] bg-slate-900/40 border border-white/5 hover:border-blue-500/30 transition-colors group">
           <div className="flex items-center justify-between mb-6">
              <div className="flex items-center gap-4">
                 <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400"><Linkedin className="w-6 h-6" /></div>
-                <div>
-                   <h3 className="font-bold text-white text-xl">LinkedIn: Dwell Time vs. Depth</h3>
-                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Viral Velocity</span>
-                </div>
+                <h3 className="text-2xl font-bold text-white">LinkedIn</h3>
              </div>
-             <Timer className="w-6 h-6 text-blue-500/20 group-hover:text-blue-500 transition-colors" />
+             <span className="text-xs font-bold bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full border border-blue-500/30">HACK: DWELL TIME RATIO</span>
           </div>
-          <div className="space-y-4">
-             <div className="bg-black/30 p-4 rounded-xl border border-white/5">
-                <strong className="text-blue-400 text-xs uppercase tracking-widest block mb-1">THE EXPLOIT</strong>
-                <p className="text-slate-300 text-sm">
-                   LinkedIn penalizes "Engagement Bait" (one-word comments). It prioritizes <strong>Dwell Time</strong> (time on screen) and <strong>Comment Depth</strong> (replies to replies).
-                   <br/><br/>
-                   <strong>The Hack:</strong> Upload content as a <strong>PDF Document</strong>. Every swipe resets the "Dwell Timer," signaling high value. For comments, wait for 3 comments, then reply with a question to start a "Thread." A 3-level thread is weighted <strong>4.5x higher</strong> than 10 solo comments.
-                </p>
-             </div>
+          <p className="text-sm text-slate-400 mb-4 leading-relaxed">
+             LinkedIn penalizes "Engagement Bait" (one-word comments). It prioritizes <strong>Dwell Time</strong> (time on screen).
+          </p>
+          <div className="bg-black/30 p-5 rounded-2xl border border-white/5">
+             <strong className="text-blue-400 block mb-2 text-xs uppercase tracking-widest">THE EXPLOIT</strong>
+             <p className="text-slate-300 text-sm">
+                A 10-slide PDF Document forces the user to swipe and read, guaranteeing 30s+ dwell time. This flags the post as "Industry Insight" rather than spam.
+             </p>
           </div>
         </div>
 
-        {/* TIKTOK HACK */}
         <div className="p-8 rounded-[2rem] bg-slate-900/40 border border-white/5 hover:border-cyan-500/30 transition-colors group">
           <div className="flex items-center justify-between mb-6">
              <div className="flex items-center gap-4">
-                <div className="p-3 bg-cyan-500/10 rounded-xl text-cyan-400"><Smartphone className="w-6 h-6" /></div>
-                <div>
-                   <h3 className="font-bold text-white text-xl">TikTok: The "Search Loop"</h3>
-                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">SEO Injection</span>
-                </div>
+                <div className="p-3 bg-cyan-500/10 rounded-xl text-cyan-400"><Search className="w-6 h-6" /></div>
+                <h3 className="text-2xl font-bold text-white">TikTok</h3>
              </div>
-             <Search className="w-6 h-6 text-cyan-500/20 group-hover:text-cyan-500 transition-colors" />
+             <span className="text-xs font-bold bg-cyan-500/20 text-cyan-300 px-3 py-1 rounded-full border border-cyan-500/30">HACK: SEARCH LOOP</span>
           </div>
-          <div className="space-y-4">
-             <div className="bg-black/30 p-4 rounded-xl border border-white/5">
-                <strong className="text-cyan-400 text-xs uppercase tracking-widest block mb-1">THE EXPLOIT</strong>
-                <p className="text-slate-300 text-sm">
-                   TikTok is a Search Engine. It reads text (OCR) and listens to audio (ASR). You can rank for keywords you don't want visible.
-                   <br/><br/>
-                   <strong>The Hack:</strong> Use "Text-to-Speech" to say your keyword (e.g., "Best Crypto Wallet"). Drag the text bubble <strong>off-screen</strong>. Set volume to 1%. The algorithm "hears" and indexes the keyword, but the viewer sees a clean video.
-                </p>
-             </div>
+          <p className="text-sm text-slate-400 mb-4 leading-relaxed">
+             TikTok is a Search Engine (SEO), not a social network. It reads text on screen (OCR).
+          </p>
+          <div className="bg-black/30 p-5 rounded-2xl border border-white/5">
+             <strong className="text-cyan-400 block mb-2 text-xs uppercase tracking-widest">THE EXPLOIT</strong>
+             <p className="text-slate-300 text-sm">
+                Add "Text-to-Speech" of your main keyword (e.g. "Best Crypto Wallet"). Slide the text bubble OFF SCREEN so it is invisible. Set volume to 1%. The algorithm "hears" and "reads" the keyword, indexing you for search, but the viewer sees a clean video.
+             </p>
           </div>
         </div>
 
-        {/* YOUTUBE HACK */}
         <div className="p-8 rounded-[2rem] bg-slate-900/40 border border-white/5 hover:border-red-500/30 transition-colors group">
           <div className="flex items-center justify-between mb-6">
              <div className="flex items-center gap-4">
                 <div className="p-3 bg-red-500/10 rounded-xl text-red-400"><Youtube className="w-6 h-6" /></div>
-                <div>
-                   <h3 className="font-bold text-white text-xl">YouTube: "Session Start" Token</h3>
-                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Recommendation Engine</span>
-                </div>
+                <h3 className="text-2xl font-bold text-white">YouTube</h3>
              </div>
-             <Youtube className="w-6 h-6 text-red-500/20 group-hover:text-red-500 transition-colors" />
+             <span className="text-xs font-bold bg-red-500/20 text-red-300 px-3 py-1 rounded-full border border-red-500/30">HACK: SESSION TOKEN</span>
           </div>
-          <div className="space-y-4">
-             <div className="bg-black/30 p-4 rounded-xl border border-white/5">
-                <strong className="text-red-400 text-xs uppercase tracking-widest block mb-1">THE EXPLOIT</strong>
-                <p className="text-slate-300 text-sm">
-                   YouTube rewards videos that bring people <em>onto</em> the platform.
-                   <br/><br/>
-                   <strong>The Hack:</strong> If a user clicks your link from LinkedIn/Twitter and starts a YouTube session, your video gets a "Session Start" token. These tokens drastically boost your probability of appearing in the "Recommended Sidebar" because you are a proven traffic source.
-                </p>
-             </div>
+          <p className="text-sm text-slate-400 mb-4 leading-relaxed">
+             YouTube cares about "Session Time" (Total time on platform).
+          </p>
+          <div className="bg-black/30 p-5 rounded-2xl border border-white/5">
+             <strong className="text-red-400 block mb-2 text-xs uppercase tracking-widest">THE EXPLOIT</strong>
+             <p className="text-slate-300 text-sm">
+                Post links to your video on Reddit/Twitter. If a user clicks your link and *starts* a YouTube session, you get the "Session Start" credit. These videos are prioritized in recommendations because they bring people *to* the app.
+             </p>
           </div>
         </div>
 

@@ -1,7 +1,5 @@
-
 import React from 'react';
-import { Clock, Calendar, Zap, AlertTriangle } from 'lucide-react';
-import { TIMING_DATA } from '../../constants';
+import { Clock, Calendar, Zap } from 'lucide-react';
 
 const AcademyTiming: React.FC = () => {
   return (

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { X, BookOpen, Layers, Cpu, Users, Clock } from 'lucide-react';
 import AcademyManual from './academy/AcademyManual';

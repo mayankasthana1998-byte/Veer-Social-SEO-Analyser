@@ -1,6 +1,5 @@
-
 import React, { useRef } from 'react';
-import { Upload, X, FileVideo, ImagePlus, Zap, FileText } from 'lucide-react';
+import { Upload, X, FileVideo, FileText } from 'lucide-react';
 import { MAX_FILE_SIZE_BYTES, MAX_FILE_SIZE_MB } from '../constants';
 import { FileInput } from '../types';
 
@@ -35,7 +34,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ files, setFiles, multiple = fal
           preview = URL.createObjectURL(file);
         } else if (file.type === 'application/pdf') {
           type = 'pdf';
-          preview = ''; // No preview for PDF
+          preview = '';
         } else {
           preview = URL.createObjectURL(file);
         }

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Sparkles, Settings2, BrainCircuit, Flame, ShieldCheck } from 'lucide-react';
 
@@ -28,19 +27,23 @@ const AcademyManual: React.FC = () => {
           <div className="space-y-4">
              <div className="flex gap-4 items-start">
                 <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-xs font-bold text-white shrink-0">1</span>
-                <p className="text-sm text-slate-400"><strong className="text-white">Upload Media:</strong> Drop a Video (up to 1GB) or Image. The AI performs a "Visual Audit" to detect sentiment.</p>
+                <p className="text-sm text-slate-400"><strong className="text-white">Upload Media:</strong> Drop a Video (up to 1GB) or Image. The AI "watches" it to understand the vibe.</p>
              </div>
              <div className="flex gap-4 items-start">
                 <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-xs font-bold text-white shrink-0">2</span>
-                <p className="text-sm text-slate-400"><strong className="text-white">Select Platform:</strong> Switching platforms changes the AI's "Brain" (e.g., LinkedIn Mode vs. TikTok Mode).</p>
+                <p className="text-sm text-slate-400"><strong className="text-white">Select Platform:</strong> Choose where you are posting (e.g., Instagram). This changes the AI's "brain."</p>
              </div>
              <div className="flex gap-4 items-start">
                 <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-xs font-bold text-white shrink-0">3</span>
-                <p className="text-sm text-slate-400"><strong className="text-white">Hyper-Targeting:</strong> Define your Tone (e.g., "Contrarian") and Goal (e.g., "Saves"). Multi-select for nuance.</p>
+                <p className="text-sm text-slate-400"><strong className="text-white">Hyper-Targeting:</strong> Select your Tone (e.g., Contrarian) and Goal (e.g., Saves).</p>
              </div>
              <div className="flex gap-4 items-start">
                 <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-xs font-bold text-white shrink-0">4</span>
-                <p className="text-sm text-slate-400"><strong className="text-white">Execute:</strong> Click Initialize. Review the "Before vs. After" score to see the SEO lift.</p>
+                <p className="text-sm text-slate-400"><strong className="text-white">Brand Guard:</strong> (Optional) Paste your brand voice rules so the AI doesn't sound generic.</p>
+             </div>
+             <div className="flex gap-4 items-start">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-xs font-bold text-white shrink-0">5</span>
+                <p className="text-sm text-slate-400"><strong className="text-white">Execute:</strong> Click Initialize. Review the "Before vs. After" score to see the lift.</p>
              </div>
           </div>
         </div>
@@ -66,10 +69,14 @@ const AcademyManual: React.FC = () => {
              </div>
              <div className="flex gap-4 items-start">
                 <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-xs font-bold text-white shrink-0">2</span>
-                <p className="text-sm text-slate-400"><strong className="text-white">Context Injection:</strong> Add specific keywords you want to rank for.</p>
+                <p className="text-sm text-slate-400"><strong className="text-white">Select Platform:</strong> Choose the destination to optimize the tone and structure.</p>
              </div>
              <div className="flex gap-4 items-start">
                 <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-xs font-bold text-white shrink-0">3</span>
+                <p className="text-sm text-slate-400"><strong className="text-white">Context Injection:</strong> Add specific keywords you want to rank for.</p>
+             </div>
+             <div className="flex gap-4 items-start">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-xs font-bold text-white shrink-0">4</span>
                 <p className="text-sm text-slate-400"><strong className="text-white">Vibe Polish:</strong> The AI applies "Vibe Injection" to add relevant emojis and format the text for readability.</p>
              </div>
           </div>
@@ -92,15 +99,15 @@ const AcademyManual: React.FC = () => {
           <div className="space-y-4">
              <div className="flex gap-4 items-start">
                 <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-xs font-bold text-white shrink-0">1</span>
-                <p className="text-sm text-slate-400"><strong className="text-white">Gather Intel:</strong> Take 2-5 screenshots or download videos of top-performing posts in your niche.</p>
+                <p className="text-sm text-slate-400"><strong className="text-white">Gather Intel:</strong> Take 2-5 screenshots of viral posts in your niche.</p>
              </div>
              <div className="flex gap-4 items-start">
                 <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-xs font-bold text-white shrink-0">2</span>
-                <p className="text-sm text-slate-400"><strong className="text-white">Input Data:</strong> Paste their captions and upload the visuals.</p>
+                <p className="text-sm text-slate-400"><strong className="text-white">Copy Captions:</strong> Paste their captions into the text box.</p>
              </div>
              <div className="flex gap-4 items-start">
                 <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 text-xs font-bold text-white shrink-0">3</span>
-                <p className="text-sm text-slate-400"><strong className="text-white">Decode:</strong> The AI generates a "Spy Matrix" chart. It reveals the exact Hook, Psychological Trigger, and SEO Keywords they used.</p>
+                <p className="text-sm text-slate-400"><strong className="text-white">Upload Visuals:</strong> Drop the screenshots/videos into the upload zone.</p>
              </div>
           </div>
         </div>

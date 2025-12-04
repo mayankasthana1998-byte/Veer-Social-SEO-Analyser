@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Settings2, Instagram, Music2, Youtube, Linkedin, Twitter, Facebook } from 'lucide-react';
 import { Platform } from '../../types';
