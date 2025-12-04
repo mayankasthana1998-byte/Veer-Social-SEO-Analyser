@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { AnalysisResult, AppMode } from '../types';
-import { Copy, TrendingUp, Hash, Eye, MessageSquare, Flame, Share2, Download, Twitter, Linkedin, MessageCircle, Sparkles, Zap, Crosshair, Check, BarChart3, ArrowRight } from 'lucide-react';
+import { Copy, TrendingUp, Hash, Eye, MessageSquare, Flame, Share2, Download, Twitter, Linkedin, MessageCircle, Sparkles, Zap, Crosshair, Check, BarChart3, ArrowRight, Lightbulb } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface AnalysisResultViewProps {
@@ -356,6 +356,29 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode })
           </div>
         </div>
       </div>
+      
+      {result.optimizationIdeas && result.optimizationIdeas.length > 0 && (
+        <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 p-8 rounded-[2.5rem]">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center">
+                <Lightbulb className="w-4 h-4 mr-2 text-yellow-400" /> Growth Engine: Next-Level Ideas
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {result.optimizationIdeas.map((idea, index) => (
+              <div key={index} className="bg-slate-950/50 p-6 rounded-2xl border border-slate-800 hover:border-yellow-500/30 transition-colors group">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center border border-yellow-500/20 shrink-0">
+                    <span className="font-black text-yellow-400 text-sm">{index + 1}</span>
+                  </div>
+                  <h4 className="font-bold text-white text-sm group-hover:text-yellow-300 transition-colors">{idea.title}</h4>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">{idea.idea}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div ref={seoRef} className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 p-8 rounded-[2.5rem]">
         <div className="flex justify-between items-center mb-6">

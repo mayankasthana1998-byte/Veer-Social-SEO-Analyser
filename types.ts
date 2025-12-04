@@ -64,6 +64,10 @@ export interface AnalysisResult {
     formula: string;
     spyMatrix?: CompetitorRow[];
   }; 
+  optimizationIdeas?: {
+    title: string;
+    idea: string;
+  }[];
 }
 
 export interface TrendItem {

@@ -175,9 +175,13 @@ export const MODE_PROMPTS = {
     - **'virality.score'**: Rate YOUR STRATEGY (90-99).
     - **'virality.gapAnalysis'**: Explain the lift in algorithmic and psychological terms.
     
+    **OPTIMIZATION IDEAS:**
+    - Finally, provide 3 actionable 'optimizationIdeas'. Each idea must have a 'title' (e.g., "The Contrarian Angle", "Carousel Repurpose", "Community Question Hook") and an 'idea' (a short, actionable suggestion). These ideas should offer alternative ways to present the content for maximum reach or deeper engagement.
+
     Return a JSON object matching the AnalysisResult interface.
   `},
-  REFINE: (originalText: string, keywords: string, targeting: string, platform?: string, format?: string) => `
+  // FIX: Corrected the type of 'platform' from lowercase 'platform' to the imported enum 'Platform'.
+  REFINE: (originalText: string, keywords: string, targeting: string, platform?: Platform, format?: string) => `
     MODE B: REFINE DRAFT (The Editor).
     Context/Keywords: ${keywords}.
     Original Draft: "${originalText}".
@@ -197,6 +201,9 @@ export const MODE_PROMPTS = {
     **SCORING:**
     - **'virality.baselineScore'**: Rate ORIGINAL (0-100).
     - **'virality.score'**: Rate REFINED (90-99).
+
+    **OPTIMIZATION IDEAS:**
+    - After refining, provide 3 actionable 'optimizationIdeas' on how to improve or repurpose this content. Each must have a 'title' and an 'idea'.
 
     Return a JSON object where 'strategy.caption' is the refined text.
   `,

@@ -329,6 +329,17 @@ export const analyzeContent = async (
                 }
               }
             }
+          },
+          optimizationIdeas: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                title: { type: Type.STRING },
+                idea: { type: Type.STRING }
+              },
+              required: ['title', 'idea']
+            }
           }
         },
         required: ['visualAudit', 'strategy', 'seo', 'virality']
