@@ -22,57 +22,94 @@ const fileToPart = (file: File): Promise<{ inlineData: { data: string; mimeType:
   });
 };
 
-// VIDEO FALLBACK: EXTRACT FRAMES
+// ROBUST VIDEO FRAME EXTRACTION
 const extractFramesFromVideo = async (videoFile: File, frameCount: number = 5): Promise<any[]> => {
-  console.log("Switching to Frame Extraction Strategy...");
+  console.log("Initialize: Frame Extraction Strategy");
+  
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const frames: any[] = [];
     const videoUrl = URL.createObjectURL(videoFile);
-    video.src = videoUrl;
+
+    // Critical settings for browser background processing
+    video.autoplay = false;
     video.muted = true;
     video.playsInline = true;
     video.crossOrigin = "anonymous";
+    video.src = videoUrl;
 
-    video.onloadedmetadata = async () => {
-      const duration = video.duration;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const interval = duration / (frameCount + 1);
-      const timestamps = Array.from({ length: frameCount }, (_, i) => (i + 1) * interval);
-
+    const processCapture = async () => {
       try {
+        const duration = video.duration;
+        if (!duration || !isFinite(duration)) {
+          throw new Error("Could not determine video duration.");
+        }
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Calculate timestamps - avoid strict 0.0 and strict end to avoid black frames
+        const interval = duration / (frameCount + 1);
+        const timestamps = Array.from({ length: frameCount }, (_, i) => (i + 1) * interval);
+
         for (const time of timestamps) {
-          await new Promise<void>((seekResolve) => {
-            video.currentTime = time;
-            video.onseeked = () => {
+          await new Promise<void>((seekResolve, seekReject) => {
+            
+            const onSeeked = () => {
               if (ctx) {
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const base64Data = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
-                frames.push({
-                  inlineData: {
-                    data: base64Data,
-                    mimeType: 'image/jpeg'
-                  }
-                });
+                try {
+                  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                  const base64Data = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+                  frames.push({
+                    inlineData: {
+                      data: base64Data,
+                      mimeType: 'image/jpeg'
+                    }
+                  });
+                  seekResolve();
+                } catch (err) {
+                  seekReject(err);
+                }
+              } else {
+                seekResolve(); // Skip if context missing
               }
-              seekResolve();
             };
+
+            // Safety timeout in case seek hangs
+            const timeoutId = setTimeout(() => {
+              console.warn(`Seek timeout at ${time}s`);
+              seekResolve(); 
+            }, 3000);
+
+            video.addEventListener('seeked', () => {
+              clearTimeout(timeoutId);
+              onSeeked();
+            }, { once: true });
+
+            video.currentTime = time;
           });
         }
+
         URL.revokeObjectURL(videoUrl);
         resolve(frames);
+
       } catch (err) {
         URL.revokeObjectURL(videoUrl);
         reject(err);
       }
     };
-    video.onerror = () => {
+
+    // 'loadeddata' is more reliable than 'loadedmetadata' for frame availability
+    video.addEventListener('loadeddata', () => {
+      processCapture().catch(reject);
+    });
+
+    video.addEventListener('error', (e) => {
       URL.revokeObjectURL(videoUrl);
-      reject(new Error("Failed to load video for frame extraction"));
-    };
+      reject(new Error(`Video load error: ${video.error?.message || 'Unknown error'}`));
+    });
   });
 };
 
@@ -105,7 +142,7 @@ const uploadLargeFile = async (ai: GoogleGenAI, file: File): Promise<{ fileData:
     let pollAttempts = 0;
     const MAX_POLL_ATTEMPTS = 60;
     while (fileInfo.state === 'PROCESSING' && pollAttempts < MAX_POLL_ATTEMPTS) {
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      await new Promise(resolve => setTimeout(resolve, 5000));
       fileInfo = await ai.files.get({ name: uploadResult.name });
       pollAttempts++;
     }
@@ -179,7 +216,6 @@ export const analyzeContent = async (
       if (mode === AppMode.GENERATION) {
         promptText += MODE_PROMPTS.GENERATION(platform, config.engagementGoal || ['Viral Growth'], config.tone || ['Authentic'], config.contentFormat || 'Standard', targeting);
       } else if (mode === AppMode.REFINE) {
-        // PASS PLATFORM AND FORMAT TO REFINE
         promptText += MODE_PROMPTS.REFINE(config.originalText || '', config.keywords || '', targeting, config.refinePlatform, config.refineFormat);
       } else if (mode === AppMode.COMPETITOR_SPY) {
         const fileContext = files.length > 0 ? `Analyzing ${files.length} mixed-media inputs.` : 'No files provided.';
@@ -197,6 +233,7 @@ export const analyzeContent = async (
     if (mode !== AppMode.TREND_HUNTER) {
       for (const file of files) {
         try {
+          // Large file logic > 20MB
           if (file.size > 20 * 1024 * 1024) { 
              try {
                const part = await uploadLargeFile(ai, file);
@@ -212,11 +249,28 @@ export const analyzeContent = async (
                }
              }
           } else {
+            // Small file logic
+            // Note: If it is a video < 20MB, we can try sending it directly. 
+            // However, browsers often struggle with direct base64 video. 
+            // We'll trust the original logic but fallback to frames if base64 conversion fails or for better analysis.
             const part = await fileToPart(file);
             parts.push(part);
           }
         } catch (e) {
           console.error(`File processing error for ${file.name}:`, e);
+          
+          // Last ditch effort for small videos that failed fileToPart
+          if (file.type.startsWith('video/')) {
+             try {
+                const frames = await extractFramesFromVideo(file, 5);
+                parts.push(...frames);
+                parts.push({ text: `[SYSTEM NOTE: Key frames from "${file.name}"]` });
+                continue;
+             } catch(frameErr) {
+                // Ignore frame error and throw original
+             }
+          }
+          
           throw new Error(`Failed to process ${file.name}. If it's a large video, try compressing it.`);
         }
       }
