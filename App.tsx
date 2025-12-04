@@ -101,18 +101,26 @@ const App: React.FC = () => {
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showGatekeeper, setShowGatekeeper] = useState(true);
 
+  // Effect for handling API Key and Gatekeeper
   useEffect(() => {
     const storedKey = localStorage.getItem('GEMINI_API_KEY');
-    if (storedKey) {
-      setApiKey(storedKey);
-      setShowGatekeeper(false);
-    } else if (process.env.API_KEY) {
-      setApiKey(process.env.API_KEY);
+    const key = storedKey || process.env.API_KEY;
+    if (key) {
+      setApiKey(key);
       setShowGatekeeper(false);
     }
-    const hasSeenWelcome = localStorage.getItem('HAS_SEEN_WELCOME');
-    if (!hasSeenWelcome && !showGatekeeper) {
-      setTimeout(() => setShowWelcome(true), 1000);
+  }, []);
+
+  // Effect for showing the Welcome Modal
+  useEffect(() => {
+    if (!showGatekeeper) {
+      const hasSeenWelcome = localStorage.getItem('HAS_SEEN_WELCOME');
+      if (!hasSeenWelcome) {
+        const timer = setTimeout(() => {
+          setShowWelcome(true);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
     }
   }, [showGatekeeper]);
 
@@ -395,7 +403,7 @@ const App: React.FC = () => {
 
       </main>
 
-      {showWelcome && <WelcomeModal onClose={() => { setShowWelcome(false); localStorage.setItem('HAS_SEEN_WELCOME', 'true'); }} onOpenAcademy={() => { setShowWelcome(false); setShowMasterclass(true); }} />}
+      {showWelcome && <WelcomeModal onClose={() => { setShowWelcome(false); localStorage.setItem('HAS_SEEN_WELCOME', 'true'); }} onOpenAcademy={() => { setShowWelcome(false); localStorage.setItem('HAS_SEEN_WELCOME', 'true'); setShowMasterclass(true); }} />}
       {showMasterclass && <MasterclassGuide onClose={() => setShowMasterclass(false)} />}
       <GlobalSearch isOpen={showSearch} onClose={() => setShowSearch(false)} history={history} onSelect={restoreFromHistory} onDelete={deleteFromHistory} onClear={clearHistory} />
       
