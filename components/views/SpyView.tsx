@@ -8,9 +8,10 @@ interface SpyViewProps {
   setFiles: React.Dispatch<React.SetStateAction<FileInput[]>>;
   config: any;
   setConfig: (c: any) => void;
+  isAnalyzing: boolean;
 }
 
-const SpyView: React.FC<SpyViewProps> = ({ files, setFiles, config, setConfig }) => {
+const SpyView: React.FC<SpyViewProps> = ({ files, setFiles, config, setConfig, isAnalyzing }) => {
   return (
     <div className="animate-fade-in">
       <div className="text-center mb-12">
@@ -66,7 +67,7 @@ const SpyView: React.FC<SpyViewProps> = ({ files, setFiles, config, setConfig })
                   Upload at least 2 screenshots or videos of viral posts.
                </p>
 
-               <FileUpload files={files} setFiles={setFiles} multiple={true} />
+               <FileUpload files={files} setFiles={setFiles} multiple={true} isAnalyzing={isAnalyzing} />
             </div>
          </div>
       </div>

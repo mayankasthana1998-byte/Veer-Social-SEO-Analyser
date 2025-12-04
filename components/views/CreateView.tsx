@@ -1,5 +1,6 @@
 
 
+
 import React, { useEffect } from 'react';
 import { 
   Instagram, Linkedin, Youtube, Music2, Twitter, Facebook, 
@@ -17,6 +18,7 @@ interface CreateViewProps {
   setFiles: React.Dispatch<React.SetStateAction<FileInput[]>>;
   brandFiles: FileInput[];
   setBrandFiles: React.Dispatch<React.SetStateAction<FileInput[]>>;
+  isAnalyzing: boolean;
 }
 
 const TONE_OPTIONS = ['Professional', 'Casual', 'Humorous', 'Contrarian', 'Empathetic', 'Authoritative', 'Urgent', 'Wholesome', 'Sarcastic', 'Inspirational'];
@@ -32,7 +34,7 @@ const PLATFORM_FORMATS: Record<Platform, string[]> = {
 };
 
 const CreateView: React.FC<CreateViewProps> = ({ 
-  platform, setPlatform, config, setConfig, files, setFiles, brandFiles, setBrandFiles 
+  platform, setPlatform, config, setConfig, files, setFiles, brandFiles, setBrandFiles, isAnalyzing 
 }) => {
 
   // Reset Format when Platform changes
@@ -232,7 +234,7 @@ const CreateView: React.FC<CreateViewProps> = ({
               <div className="flex items-center justify-between">
                  <span className="text-[10px] font-bold text-slate-500">OR UPLOAD GUIDE</span>
                  <div className="scale-75 origin-right">
-                    <FileUpload files={brandFiles} setFiles={setBrandFiles} />
+                    <FileUpload files={brandFiles} setFiles={setBrandFiles} isAnalyzing={isAnalyzing} />
                  </div>
               </div>
             </div>
@@ -243,7 +245,7 @@ const CreateView: React.FC<CreateViewProps> = ({
         {/* RIGHT COLUMN: UPLOAD */}
         <div className="lg:col-span-7">
           <div className="sticky top-24">
-            <FileUpload files={files} setFiles={setFiles} multiple={true} />
+            <FileUpload files={files} setFiles={setFiles} multiple={true} isAnalyzing={isAnalyzing} />
           </div>
         </div>
 

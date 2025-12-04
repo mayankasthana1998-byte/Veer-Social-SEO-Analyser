@@ -7,9 +7,10 @@ interface FileUploadProps {
   files: FileInput[];
   setFiles: React.Dispatch<React.SetStateAction<FileInput[]>>;
   multiple?: boolean;
+  isAnalyzing: boolean;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ files, setFiles, multiple = false }) => {
+const FileUpload: React.FC<FileUploadProps> = ({ files, setFiles, multiple = false, isAnalyzing }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const formattedMaxSize = MAX_FILE_SIZE_MB >= 1024 
@@ -17,6 +18,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ files, setFiles, multiple = fal
     : `${MAX_FILE_SIZE_MB}MB`;
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (isAnalyzing) return;
     if (event.target.files && event.target.files.length > 0) {
       const newFiles: FileInput[] = [];
       
@@ -55,6 +57,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ files, setFiles, multiple = fal
   };
 
   const removeFile = (index: number) => {
+    if (isAnalyzing) return;
     setFiles(prev => {
       const newFiles = [...prev];
       if (newFiles[index].preview) {
@@ -68,8 +71,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ files, setFiles, multiple = fal
   return (
     <div className="w-full space-y-4">
       <div 
-        onClick={() => fileInputRef.current?.click()}
-        className="relative group cursor-pointer overflow-hidden rounded-3xl"
+        onClick={() => !isAnalyzing && fileInputRef.current?.click()}
+        className={`relative group overflow-hidden rounded-3xl transition-opacity ${isAnalyzing ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-pink-500/10 transition-all group-hover:opacity-100"></div>
         <div className="absolute inset-0 border-2 border-dashed border-indigo-500/30 group-hover:border-indigo-400/80 rounded-3xl transition-colors"></div>
@@ -94,6 +97,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ files, setFiles, multiple = fal
           onChange={handleFileChange} 
           accept="image/*,video/*,application/pdf"
           multiple={multiple}
+          disabled={isAnalyzing}
         />
       </div>
 
@@ -101,12 +105,14 @@ const FileUpload: React.FC<FileUploadProps> = ({ files, setFiles, multiple = fal
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {files.map((f, idx) => (
             <div key={idx} className="relative group rounded-2xl overflow-hidden border border-slate-700 bg-black aspect-square">
-              <button 
-                onClick={() => removeFile(idx)}
-                className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 z-10"
-              >
-                <X size={14} />
-              </button>
+              {!isAnalyzing && (
+                <button 
+                  onClick={() => removeFile(idx)}
+                  className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 z-10"
+                >
+                  <X size={14} />
+                </button>
+              )}
               
               {f.type === 'video' ? (
                 <div className="w-full h-full flex items-center justify-center bg-slate-900 relative">
@@ -124,6 +130,18 @@ const FileUpload: React.FC<FileUploadProps> = ({ files, setFiles, multiple = fal
                 <img src={f.preview} alt="preview" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
               )}
               
+              {isAnalyzing && (
+                <div className="absolute inset-0 z-20 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+                  <div className="w-full h-1.5 bg-slate-700/50 rounded-full overflow-hidden relative">
+                    <div 
+                      className="absolute inset-y-0 h-full w-1/2 bg-gradient-to-r from-transparent via-indigo-400 to-transparent"
+                      style={{ animation: 'shimmer 1.5s infinite' }}
+                    ></div>
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-3">Processing</span>
+                </div>
+              )}
+
               <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black via-black/80 to-transparent">
                  <p className="text-[10px] font-mono text-slate-300 truncate">{f.file.name}</p>
                  <span className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">

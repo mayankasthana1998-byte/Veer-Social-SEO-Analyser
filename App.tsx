@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { AppMode, Platform, AnalysisResult, FileInput, TrendItem, HistoryItem, ConfigState } from './types';
 import { analyzeContent } from './services/geminiService';
@@ -323,6 +324,7 @@ const App: React.FC = () => {
                 config={config} setConfig={setConfig} 
                 files={files} setFiles={setFiles}
                 brandFiles={brandFiles} setBrandFiles={setBrandFiles}
+                isAnalyzing={isAnalyzing}
              />
            )}
            {mode === AppMode.REFINE && (
@@ -334,7 +336,11 @@ const App: React.FC = () => {
              />
            )}
            {mode === AppMode.COMPETITOR_SPY && (
-             <SpyView files={files} setFiles={setFiles} config={config} setConfig={setConfig} />
+             <SpyView 
+                files={files} setFiles={setFiles} 
+                config={config} setConfig={setConfig} 
+                isAnalyzing={isAnalyzing}
+             />
            )}
            {mode === AppMode.TREND_HUNTER && (
              <HuntView 

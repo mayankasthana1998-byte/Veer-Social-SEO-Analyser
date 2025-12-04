@@ -248,9 +248,9 @@ export const analyzeContent = async (
               parts.push(part);
             }
           }
-        } catch (e) {
+        } catch (e: any) {
           console.error(`File processing error for ${file.name}:`, e);
-          throw new Error(`Failed to process ${file.name}.`);
+          throw new Error(`Failed to process ${file.name}. Check file integrity and try again.`);
         }
       }
     }
@@ -353,30 +353,59 @@ export const analyzeContent = async (
     });
 
     const resultText = response.text;
-    if (!resultText) throw new Error("No response from AI");
+    if (!resultText) throw new Error("No response from AI. The model may be overloaded or the prompt was blocked.");
 
     const cleanText = cleanJson(resultText);
     let parsed;
     try {
       parsed = JSON.parse(cleanText);
     } catch (e) {
-      throw new Error("AI returned malformed data. Please try again.");
+      console.error("JSON Parsing Error on:", cleanText);
+      throw new Error("AI returned malformed data. This can happen with complex requests. Please simplify and try again.");
     }
 
     if (mode === AppMode.TREND_HUNTER) {
       if (parsed.trends && Array.isArray(parsed.trends)) return parsed.trends as TrendItem[];
       if (Array.isArray(parsed)) return parsed as TrendItem[];
-      throw new Error("Failed to parse Trend results.");
+      throw new Error("Failed to parse Trend results from AI response.");
     } else {
       return parsed as AnalysisResult;
     }
 
   } catch (error: any) {
     console.error("Gemini Analysis Error:", error);
-    if (error.message === "MISSING_KEY") throw new Error("API Key is missing.");
-    if (error.message?.includes('401') || error.message?.includes('403')) throw new Error("INVALID_KEY");
-    if (error.message?.includes('429')) throw new Error("API Quota Exceeded. Wait 1 minute.");
-    if (error.message?.includes('503')) throw new Error("Google AI Service temporarily down.");
-    throw new Error(`Analysis Failed: ${error.message || 'Unknown Error'}`);
+    const errorMessage = error.message || 'Unknown Error';
+
+    if (errorMessage.includes("MISSING_KEY")) {
+      throw new Error("API Key is missing. Please provide a valid key.");
+    }
+    
+    if (errorMessage.includes("UPLOAD_FAILED_TRIGGER_FALLBACK")) {
+      throw new Error("Media upload failed. The file may be too large or the connection is unstable. Please try again.");
+    }
+    
+    if (error.toString().includes('400')) {
+        if(errorMessage.includes('API key not valid')){
+            throw new Error("INVALID_KEY");
+        }
+        throw new Error("Request blocked: The prompt or content may have violated safety policies. Please adjust and try again. (400)");
+    }
+    if (error.toString().includes('401') || error.toString().includes('403') || errorMessage.includes('API key not valid')) {
+      throw new Error("INVALID_KEY"); 
+    }
+    if (error.toString().includes('429')) {
+      throw new Error("Rate limit exceeded. You've sent too many requests. Please wait a minute and try again. (429)");
+    }
+    if (error.toString().includes('500')) {
+      throw new Error("The AI service encountered an internal error. This is a temporary issue on their end. Please try again in a few moments. (500)");
+    }
+    if (error.toString().includes('503')) {
+      throw new Error("The AI service is temporarily unavailable or overloaded. Please try again later. (503)");
+    }
+    if (errorMessage.toLowerCase().includes('fetch failed') || errorMessage.toLowerCase().includes('network')) {
+      throw new Error("Network connection error. Please check your internet connection and try again.");
+    }
+
+    throw new Error(`An unexpected error occurred: ${errorMessage}`);
   }
 };

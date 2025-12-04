@@ -15,13 +15,16 @@ export enum Platform {
 }
 
 export enum HookType {
+  CURIOSITY_HOOK = 'Curiosity Hook',
+  PATTERN_INTERRUPT = 'Pattern Interrupt',
+  PAIN_POINT_HOOK = 'Pain Point Hook',
+  BENEFIT_HOOK = 'Benefit Hook',
+  SOCIAL_PROOF_HOOK = 'Social Proof Hook',
+  TRENDING_HOOK = 'Trending Hook',
   INTRIGUING_QUESTIONS = 'Intriguing Questions',
   BOLD_STATEMENTS = 'Bold/Startling Statements',
-  COMPELLING_VISUALS = 'Compelling Visuals',
   STORYTELLING_SNIPPETS = 'Storytelling Snippets',
   URGENCY_SCARCITY = 'Urgency/Scarcity',
-  PROBLEM_SOLUTION = 'Problem/Solution',
-  AUTHORITY = 'Authority',
 }
 
 export interface CompetitorRow {
