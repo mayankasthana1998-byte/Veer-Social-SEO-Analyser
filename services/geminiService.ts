@@ -2,8 +2,6 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult, AppMode, Platform, TrendItem } from "../types";
 import { SYSTEM_INSTRUCTION, MODE_PROMPTS, BRAND_GUARD_INSTRUCTION } from "../constants";
 
-const MODEL_NAME = 'gemini-2.5-flash';
-
 const fileToPart = (file: File): Promise<{ inlineData: { data: string; mimeType: string } }> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -22,18 +20,14 @@ const fileToPart = (file: File): Promise<{ inlineData: { data: string; mimeType:
   });
 };
 
-// ROBUST VIDEO FRAME EXTRACTION
 const extractFramesFromVideo = async (videoFile: File, frameCount: number = 5): Promise<any[]> => {
-  console.log("Initialize: Frame Extraction Strategy");
-  
-  return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
     const video = document.createElement('video');
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const frames: any[] = [];
     const videoUrl = URL.createObjectURL(videoFile);
 
-    // Critical settings for browser background processing
     video.autoplay = false;
     video.muted = true;
     video.playsInline = true;
@@ -43,119 +37,57 @@ const extractFramesFromVideo = async (videoFile: File, frameCount: number = 5): 
     const processCapture = async () => {
       try {
         const duration = video.duration;
-        if (!duration || !isFinite(duration)) {
-          throw new Error("Could not determine video duration.");
-        }
-
+        if (!duration || !isFinite(duration)) throw new Error("Could not determine video duration.");
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        
-        // Calculate timestamps - avoid strict 0.0 and strict end to avoid black frames
         const interval = duration / (frameCount + 1);
         const timestamps = Array.from({ length: frameCount }, (_, i) => (i + 1) * interval);
 
         for (const time of timestamps) {
           await new Promise<void>((seekResolve, seekReject) => {
-            
             const onSeeked = () => {
+              video.removeEventListener('seeked', onSeeked);
               if (ctx) {
                 try {
                   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                   const base64Data = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
-                  frames.push({
-                    inlineData: {
-                      data: base64Data,
-                      mimeType: 'image/jpeg'
-                    }
-                  });
-                  seekResolve();
-                } catch (err) {
-                  seekReject(err);
-                }
-              } else {
-                seekResolve(); // Skip if context missing
+                  frames.push({ inlineData: { data: base64Data, mimeType: 'image/jpeg' } });
+                } catch (e) { console.warn("Frame capture error", e); }
               }
+              seekResolve();
             };
-
-            // Safety timeout in case seek hangs
-            const timeoutId = setTimeout(() => {
-              console.warn(`Seek timeout at ${time}s`);
-              seekResolve(); 
-            }, 3000);
-
-            video.addEventListener('seeked', () => {
-              clearTimeout(timeoutId);
-              onSeeked();
-            }, { once: true });
-
-            video.currentTime = time;
+             video.addEventListener('seeked', onSeeked, { once: true });
+             video.currentTime = time;
           });
         }
-
         URL.revokeObjectURL(videoUrl);
         resolve(frames);
-
       } catch (err) {
         URL.revokeObjectURL(videoUrl);
         reject(err);
       }
     };
 
-    // 'loadeddata' is more reliable than 'loadedmetadata' for frame availability
-    video.addEventListener('loadeddata', () => {
-      processCapture().catch(reject);
-    });
-
-    video.addEventListener('error', (e) => {
-      URL.revokeObjectURL(videoUrl);
-      reject(new Error(`Video load error: ${video.error?.message || 'Unknown error'}`));
-    });
+    video.addEventListener('loadeddata', () => processCapture().catch(reject), { once: true });
+    video.addEventListener('error', () => reject(new Error('Video load error')), { once: true });
   });
 };
 
-const uploadLargeFile = async (ai: GoogleGenAI, file: File): Promise<{ fileData: { fileUri: string; mimeType: string } }> => {
-  const safeDisplayName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-  let uploadResult;
-  let lastError;
-  for (let i = 0; i < 3; i++) {
-    try {
-      uploadResult = await ai.files.upload({
+const uploadLargeFile = async (ai: GoogleGenAI, file: File) => {
+    const safeDisplayName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const uploadResult = await ai.files.upload({
         file: file,
-        config: { 
-          displayName: safeDisplayName,
-          mimeType: file.type || 'application/octet-stream'
-        }
-      });
-      break; 
-    } catch (e: any) {
-      lastError = e;
-      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-    }
-  }
-
-  if (!uploadResult) {
-     throw lastError || new Error("Upload handshake failed.");
-  }
-
-  try {
+        config: { displayName: safeDisplayName, mimeType: file.type }
+    });
     let fileInfo = await ai.files.get({ name: uploadResult.name });
-    let pollAttempts = 0;
-    const MAX_POLL_ATTEMPTS = 60;
-    while (fileInfo.state === 'PROCESSING' && pollAttempts < MAX_POLL_ATTEMPTS) {
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      fileInfo = await ai.files.get({ name: uploadResult.name });
-      pollAttempts++;
+    while (fileInfo.state === 'PROCESSING') {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        fileInfo = await ai.files.get({ name: uploadResult.name });
     }
-    if (fileInfo.state === 'FAILED') throw new Error("Processing failed");
-    return {
-      fileData: {
-        fileUri: fileInfo.uri,
-        mimeType: fileInfo.mimeType
-      }
-    };
-  } catch (error: any) {
-    throw new Error("UPLOAD_FAILED_TRIGGER_FALLBACK");
-  }
+    if (fileInfo.state === 'FAILED') {
+      throw new Error(`File upload failed for ${file.name}`);
+    }
+    return { fileData: { fileUri: fileInfo.uri, mimeType: fileInfo.mimeType } };
 };
 
 const cleanJson = (text: string) => {
@@ -173,23 +105,7 @@ export const analyzeContent = async (
   files: File[],
   mode: AppMode,
   platform: Platform,
-  config: { 
-    goal?: string; 
-    style?: string; 
-    keywords?: string; 
-    originalText?: string; 
-    geography?: string; 
-    targetAudience?: string;
-    targetLanguage?: string;
-    demographics?: string;
-    brandGuidelines?: string;
-    niche?: string; 
-    tone?: string[];
-    engagementGoal?: string[];
-    contentFormat?: string;
-    refinePlatform?: Platform;
-    refineFormat?: string;
-  }
+  config: any
 ): Promise<AnalysisResult | TrendItem[]> => {
   try {
     if (!apiKey) throw new Error("MISSING_KEY");
@@ -199,32 +115,25 @@ export const analyzeContent = async (
     const targeting = [
       config.geography ? `Target Geography: ${config.geography}` : '',
       config.targetAudience ? `Target Audience: ${config.targetAudience}` : '',
-      config.demographics ? `Target Demographics: ${config.demographics}` : ''
     ].filter(Boolean).join('\n');
 
     let promptText = "";
+    
+    // SMART MODEL TIERING & CONFIGURATION
+    const modelName = 'gemini-2.5-flash';
+    const generateConfig: any = { systemInstruction: SYSTEM_INSTRUCTION };
 
     if (mode === AppMode.TREND_HUNTER) {
-      if (!config.niche) throw new Error("Niche is required for Trend Hunter.");
       promptText = MODE_PROMPTS.TREND_HUNTER(config.niche, platform, currentDate);
     } else {
-      if (config.brandGuidelines) {
-        promptText += BRAND_GUARD_INSTRUCTION(config.brandGuidelines) + "\n\n";
-      }
-      promptText += "IMPORTANT: You MUST return a valid JSON object matching the AnalysisResult structure. Do not include markdown formatting.\n\n";
+      if (config.brandGuidelines) promptText += BRAND_GUARD_INSTRUCTION(config.brandGuidelines) + "\n\n";
       
       if (mode === AppMode.GENERATION) {
-        promptText += MODE_PROMPTS.GENERATION(platform, config.engagementGoal || ['Viral Growth'], config.tone || ['Authentic'], config.contentFormat || 'Standard', targeting);
+        promptText += MODE_PROMPTS.GENERATION(platform, config.engagementGoal || [], config.tone || [], config.contentFormat || 'Standard', targeting, config.keywords || '');
       } else if (mode === AppMode.REFINE) {
         promptText += MODE_PROMPTS.REFINE(config.originalText || '', config.keywords || '', targeting, config.refinePlatform, config.refineFormat);
       } else if (mode === AppMode.COMPETITOR_SPY) {
-        const fileContext = files.length > 0 ? `Analyzing ${files.length} mixed-media inputs.` : 'No files provided.';
-        promptText += `MODE C: COMPETITOR SPY. ${fileContext}\n`;
-        promptText += MODE_PROMPTS.COMPETITOR_SPY(files.length, config.originalText || 'No captions provided', targeting);
-      }
-      
-      if (config.targetLanguage) {
-        promptText += `\n\nLANGUAGE OVERRIDE: The user has explicitly selected '${config.targetLanguage}'. Output fields in ${config.targetLanguage}.`;
+        promptText += MODE_PROMPTS.COMPETITOR_SPY(platform, files.length, config.originalText || 'No text', targeting);
       }
     }
 
@@ -234,126 +143,55 @@ export const analyzeContent = async (
       for (const file of files) {
         try {
           if (file.type.startsWith('video/')) {
-            console.log(`Video detected: ${file.name}. Forcing frame extraction mode.`);
-            const frames = await extractFramesFromVideo(file, 5);
-            parts.push(...frames);
-            parts.push({ text: `[SYSTEM NOTE: The following images are key frames extracted from the video file "${file.name}". Analyze them as a continuous video sequence.]` });
+               const frames = await extractFramesFromVideo(file, 5);
+               parts.push(...frames);
           } else {
-            // For non-video files (images, PDFs), use the existing size-based logic.
-            if (file.size > 20 * 1024 * 1024) { // Large file logic
-              const part = await uploadLargeFile(ai, file);
-              parts.push(part);
-            } else { // Small file logic
-              const part = await fileToPart(file);
-              parts.push(part);
-            }
+               if (file.size > 20 * 1024 * 1024) {
+                  const part = await uploadLargeFile(ai, file);
+                  parts.push(part);
+               } else {
+                  const part = await fileToPart(file);
+                  parts.push(part);
+               }
           }
-        } catch (e: any) {
-          console.error(`File processing error for ${file.name}:`, e);
-          throw new Error(`Failed to process ${file.name}. Check file integrity and try again.`);
+        } catch (uploadError) {
+          console.error(`Failed to process file ${file.name}:`, uploadError);
+          throw new Error(`Error processing file: ${file.name}. It might be corrupted or in an unsupported format.`);
         }
       }
     }
-
-    const generateConfig: any = {
-      systemInstruction: SYSTEM_INSTRUCTION,
-    };
-
-    if (mode === AppMode.TREND_HUNTER) {
+    
+    // CONFIGURE TOOLS & RESPONSE SCHEMA
+    if (mode === AppMode.TREND_HUNTER || mode === AppMode.COMPETITOR_SPY) {
       generateConfig.tools = [{ googleSearch: {} }];
     } else {
       generateConfig.responseMimeType = "application/json";
       generateConfig.responseSchema = {
         type: Type.OBJECT,
         properties: {
-          visualAudit: {
-            type: Type.OBJECT,
-            properties: {
-              summary: { type: Type.STRING },
-              hookIdentified: { type: Type.STRING },
-              psychologyCheck: { type: Type.STRING },
-            },
-            required: ['summary', 'hookIdentified', 'psychologyCheck']
-          },
-          strategy: {
-            type: Type.OBJECT,
-            properties: {
-              headline: { type: Type.STRING },
-              caption: { type: Type.STRING },
-              cta: { type: Type.STRING },
-            },
-            required: ['headline', 'caption', 'cta']
-          },
-          seo: {
-            type: Type.OBJECT,
-            properties: {
-              hiddenKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
-              hashtags: {
-                type: Type.OBJECT,
-                properties: {
-                  broad: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  niche: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  specific: { type: Type.ARRAY, items: { type: Type.STRING } },
-                }
-              }
+          virality: { type: Type.OBJECT, properties: { score: { type: Type.NUMBER }, baselineScore: { type: Type.NUMBER }, gapAnalysis: { type: Type.STRING }}},
+          visualAudit: { type: Type.OBJECT, properties: { summary: { type: Type.STRING }, hookIdentified: { type: Type.STRING }, psychologyCheck: { type: Type.STRING }}},
+          strategy: { type: Type.OBJECT, properties: { headline: { type: Type.STRING }, caption: { type: Type.STRING }, cta: { type: Type.STRING }}},
+          seo: { type: Type.OBJECT, properties: { hiddenKeywords: { type: Type.ARRAY, items: { type: Type.STRING } }, hashtags: { type: Type.OBJECT, properties: { broad: { type: Type.ARRAY, items: { type: Type.STRING } }, niche: { type: Type.ARRAY, items: { type: Type.STRING } }, specific: { type: Type.ARRAY, items: { type: Type.STRING } } } } } },
+          refineData: {
+            type: Type.OBJECT, properties: {
+              audit: { type: Type.OBJECT, properties: { score: { type: Type.NUMBER }, flaw: { type: Type.STRING }, fix: { type: Type.STRING }, explanation: { type: Type.STRING }}},
+              refinedContent: { type: Type.OBJECT, properties: { headline: { type: Type.STRING }, body: { type: Type.STRING }, cta: { type: Type.STRING }, hashtags: { type: Type.ARRAY, items: { type: Type.STRING } } }}
             }
           },
-          virality: {
-            type: Type.OBJECT,
-            properties: {
-              score: { type: Type.NUMBER },
-              baselineScore: { type: Type.NUMBER }, 
-              gapAnalysis: { type: Type.STRING },
-              trendDetected: { type: Type.STRING },
-              vibe: { type: Type.STRING },
-            },
-            required: ['score', 'gapAnalysis']
-          },
-          competitorInsights: { 
-            type: Type.OBJECT,
-            properties: {
-              visualTheme: { type: Type.STRING },
-              ctaStrategy: { type: Type.STRING },
-              formula: { type: Type.STRING },
-              spyMatrix: { 
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    keywords: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    hookUsed: { type: Type.STRING },
-                    whyItWins: { type: Type.STRING },
-                    rankingStrategy: { type: Type.STRING },
-                    impactScore: { type: Type.NUMBER }
-                  }
-                }
-              }
-            }
-          },
-          optimizationIdeas: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                title: { type: Type.STRING },
-                idea: { type: Type.STRING }
-              },
-              required: ['title', 'idea']
-            }
-          }
-        },
-        required: ['visualAudit', 'strategy', 'seo', 'virality']
+          optimizationIdeas: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, idea: { type: Type.STRING } } } }
+        }
       };
     }
 
     const response = await ai.models.generateContent({
-      model: MODEL_NAME,
+      model: modelName,
       contents: { parts },
       config: generateConfig
     });
 
     const resultText = response.text;
-    if (!resultText) throw new Error("No response from AI. The model may be overloaded or the prompt was blocked.");
+    if (!resultText) throw new Error("No response text from AI.");
 
     const cleanText = cleanJson(resultText);
     let parsed;
@@ -361,51 +199,35 @@ export const analyzeContent = async (
       parsed = JSON.parse(cleanText);
     } catch (e) {
       console.error("JSON Parsing Error on:", cleanText);
-      throw new Error("AI returned malformed data. This can happen with complex requests. Please simplify and try again.");
+      throw new Error("AI returned malformed data. Please try rephrasing your request.");
     }
-
+    
+    if (mode === AppMode.COMPETITOR_SPY) {
+        if (parsed.spyReport) return { competitorInsights: { spyReport: parsed.spyReport } } as unknown as AnalysisResult;
+        if (Array.isArray(parsed)) return { competitorInsights: { spyReport: parsed } } as unknown as AnalysisResult;
+    }
     if (mode === AppMode.TREND_HUNTER) {
-      if (parsed.trends && Array.isArray(parsed.trends)) return parsed.trends as TrendItem[];
-      if (Array.isArray(parsed)) return parsed as TrendItem[];
-      throw new Error("Failed to parse Trend results from AI response.");
-    } else {
-      return parsed as AnalysisResult;
-    }
+      if (parsed.trends) return parsed.trends as TrendItem[];
+      return parsed as TrendItem[];
+    } 
+    
+    return parsed as AnalysisResult;
 
   } catch (error: any) {
     console.error("Gemini Analysis Error:", error);
     const errorMessage = error.message || 'Unknown Error';
-
-    if (errorMessage.includes("MISSING_KEY")) {
-      throw new Error("API Key is missing. Please provide a valid key.");
+    if (errorMessage.includes("API key not valid")) {
+      throw new Error("INVALID_KEY");
     }
-    
-    if (errorMessage.includes("UPLOAD_FAILED_TRIGGER_FALLBACK")) {
-      throw new Error("Media upload failed. The file may be too large or the connection is unstable. Please try again.");
+    if (errorMessage.includes("429")) {
+      throw new Error("API rate limit exceeded. Please wait and try again.");
     }
-    
-    if (error.toString().includes('400')) {
-        if(errorMessage.includes('API key not valid')){
-            throw new Error("INVALID_KEY");
-        }
-        throw new Error("Request blocked: The prompt or content may have violated safety policies. Please adjust and try again. (400)");
+    if (errorMessage.includes("400")) {
+      throw new Error("Bad request. The AI may have blocked the content for safety reasons.");
     }
-    if (error.toString().includes('401') || error.toString().includes('403') || errorMessage.includes('API key not valid')) {
-      throw new Error("INVALID_KEY"); 
+    if (errorMessage.includes("500") || errorMessage.includes("503")) {
+      throw new Error("The AI service is temporarily unavailable. Please try again later.");
     }
-    if (error.toString().includes('429')) {
-      throw new Error("Rate limit exceeded. You've sent too many requests. Please wait a minute and try again. (429)");
-    }
-    if (error.toString().includes('500')) {
-      throw new Error("The AI service encountered an internal error. This is a temporary issue on their end. Please try again in a few moments. (500)");
-    }
-    if (error.toString().includes('503')) {
-      throw new Error("The AI service is temporarily unavailable or overloaded. Please try again later. (503)");
-    }
-    if (errorMessage.toLowerCase().includes('fetch failed') || errorMessage.toLowerCase().includes('network')) {
-      throw new Error("Network connection error. Please check your internet connection and try again.");
-    }
-
     throw new Error(`An unexpected error occurred: ${errorMessage}`);
   }
 };

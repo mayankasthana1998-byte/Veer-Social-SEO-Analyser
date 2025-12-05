@@ -1,7 +1,7 @@
 import React from 'react';
-import { Eye, Crosshair, BrainCircuit } from 'lucide-react';
+import { Eye, Crosshair, BrainCircuit, Instagram, Music2, Youtube, Linkedin, Twitter, Facebook } from 'lucide-react';
 import FileUpload from '../FileUpload';
-import { FileInput } from '../../types';
+import { FileInput, Platform } from '../../types';
 
 interface SpyViewProps {
   files: FileInput[];
@@ -9,9 +9,25 @@ interface SpyViewProps {
   config: any;
   setConfig: (c: any) => void;
   isAnalyzing: boolean;
+  platform: Platform;
+  setPlatform: (p: Platform) => void;
 }
 
-const SpyView: React.FC<SpyViewProps> = ({ files, setFiles, config, setConfig, isAnalyzing }) => {
+const SpyView: React.FC<SpyViewProps> = ({ files, setFiles, config, setConfig, isAnalyzing, platform, setPlatform }) => {
+  
+  const getPlatformStyle = (p: Platform, isSelected: boolean) => {
+    if (!isSelected) return 'bg-slate-900/40 border-slate-800 text-slate-500 hover:bg-slate-800 hover:text-white';
+    switch (p) {
+      case Platform.INSTAGRAM: return 'bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 text-white border-pink-400 shadow-[0_0_20px_-5px_rgba(236,72,153,0.5)]';
+      case Platform.TIKTOK: return 'bg-black text-white border-cyan-400 shadow-[0_0_20px_-5px_rgba(34,211,238,0.5)] border-l-4 border-l-cyan-400 border-r-4 border-r-red-500'; 
+      case Platform.YOUTUBE: return 'bg-[#FF0000] text-white border-red-500 shadow-[0_0_20px_-5px_rgba(220,38,38,0.5)]';
+      case Platform.TWITTER: return 'bg-[#1DA1F2] text-white border-sky-400 shadow-[0_0_20px_-5px_rgba(29,161,242,0.5)]';
+      case Platform.LINKEDIN: return 'bg-[#0077b5] text-white border-blue-400 shadow-[0_0_20px_-5px_rgba(0,119,181,0.5)]';
+      case Platform.FACEBOOK: return 'bg-[#1877F2] text-white border-blue-500 shadow-[0_0_20px_-5px_rgba(24,119,242,0.5)]';
+      default: return 'bg-indigo-600 text-white border-indigo-500';
+    }
+  };
+
   return (
     <div className="animate-fade-in">
       <div className="text-center mb-12">
@@ -34,9 +50,32 @@ const SpyView: React.FC<SpyViewProps> = ({ files, setFiles, config, setConfig, i
                   </div>
                   <div>
                      <h2 className="text-xl font-black text-white tracking-tight">DATA INGESTION</h2>
-                     <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Competitor Text Analysis</p>
+                     <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Analysis Configuration</p>
                   </div>
                </div>
+
+                <div className="mb-6">
+                  <label className="text-[10px] font-black text-slate-500 uppercase mb-3 block tracking-widest pl-2">Target Platform</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { id: Platform.INSTAGRAM, icon: Instagram, label: 'Insta' },
+                      { id: Platform.TIKTOK, icon: Music2, label: 'TikTok' },
+                      { id: Platform.YOUTUBE, icon: Youtube, label: 'YT' },
+                      { id: Platform.TWITTER, icon: Twitter, label: 'X' },
+                      { id: Platform.LINKEDIN, icon: Linkedin, label: 'Linked' },
+                      { id: Platform.FACEBOOK, icon: Facebook, label: 'FB' },
+                    ].map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setPlatform(p.id)}
+                        className={`flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border transition-all duration-300 ${getPlatformStyle(p.id, platform === p.id)} ${platform === p.id ? 'scale-105' : ''}`}
+                      >
+                        <p.icon size={20} />
+                        <span className="text-[10px] font-bold uppercase">{p.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                <p className="text-sm text-slate-400 mb-4 leading-relaxed">
                   Paste the exact captions used by your competitors. The AI will cross-reference this text with the visual patterns found in your uploaded screenshots.

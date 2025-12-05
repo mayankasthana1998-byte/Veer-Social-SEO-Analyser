@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect } from 'react';
 import { AppMode, Platform, AnalysisResult, FileInput, TrendItem, HistoryItem, ConfigState } from './types';
 import { analyzeContent } from './services/geminiService';
@@ -64,9 +61,9 @@ const App: React.FC = () => {
       mode,
       platform,
       data,
-      summary: summary || 'Generated Strategy'
+      summary: summary || 'Analysis Report'
     };
-    const updatedHistory = [newItem, ...history].slice(50);
+    const updatedHistory = [newItem, ...history].slice(0, 50);
     setHistory(updatedHistory);
     localStorage.setItem('SOCIAL_SEO_HISTORY', JSON.stringify(updatedHistory));
   };
@@ -78,7 +75,7 @@ const App: React.FC = () => {
   };
 
   const clearHistory = () => {
-    if(confirm('Clear entire archives?')) {
+    if(confirm('Are you sure you want to clear the entire archives?')) {
       setHistory([]);
       localStorage.removeItem('SOCIAL_SEO_HISTORY');
     }
@@ -102,7 +99,6 @@ const App: React.FC = () => {
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showGatekeeper, setShowGatekeeper] = useState(true);
 
-  // Effect for handling API Key and Gatekeeper
   useEffect(() => {
     const storedKey = localStorage.getItem('GEMINI_API_KEY');
     const key = storedKey || process.env.API_KEY;
@@ -112,7 +108,6 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Effect for showing the Welcome Modal
   useEffect(() => {
     if (!showGatekeeper) {
       const hasSeenWelcome = localStorage.getItem('HAS_SEEN_WELCOME');
@@ -125,10 +120,15 @@ const App: React.FC = () => {
     }
   }, [showGatekeeper]);
 
+  const handleSetPlatform = (p: Platform) => {
+    setPlatform(p);
+    setConfig(prev => ({ ...prev, refinePlatform: p }));
+  };
+
   const handleSaveKey = () => {
     const keyToSave = apiKeyInput.trim();
     if (!keyToSave.startsWith('AIza')) {
-      alert('Invalid Key format.');
+      alert('This does not look like a valid Gemini API Key.');
       return;
     }
     localStorage.setItem('GEMINI_API_KEY', keyToSave);
@@ -146,10 +146,11 @@ const App: React.FC = () => {
   };
 
   const handleAnalyze = async () => {
-    if (mode === AppMode.GENERATION && files.length === 0) { alert("Upload media first."); return; }
-    if (mode === AppMode.REFINE && !config.originalText) { alert("Need text input."); return; }
-    if (mode === AppMode.TREND_HUNTER && !config.niche) { alert("Enter a niche."); return; }
-    if (mode === AppMode.COMPETITOR_SPY && files.length < 2) { alert("Upload at least 2 competitor visuals."); return; }
+    // Input validation
+    if (mode === AppMode.GENERATION && files.length === 0 && !config.keywords) { alert("Please upload media or provide keywords for generation."); return; }
+    if (mode === AppMode.REFINE && !config.originalText) { alert("Please provide text in the 'Raw Content Input' field to refine."); return; }
+    if (mode === AppMode.TREND_HUNTER && !config.niche) { alert("Please enter a niche to hunt for trends."); return; }
+    if (mode === AppMode.COMPETITOR_SPY && files.length === 0 && !config.originalText) { alert("Please upload competitor media or paste a URL/caption to analyze."); return; }
 
     setIsAnalyzing(true);
     setError(null);
@@ -168,12 +169,22 @@ const App: React.FC = () => {
       } else {
         const analysis = data as AnalysisResult;
         setResult(analysis);
-        addToHistory(mode, analysis, platform, analysis.strategy.headline || 'Strategy Analysis');
+        
+        // **CRASH FIX**: Generate summary based on the actual data available for the mode.
+        let summary = 'Strategy Analysis';
+        if (mode === AppMode.GENERATION && analysis.strategy?.headline) {
+          summary = analysis.strategy.headline;
+        } else if (mode === AppMode.REFINE && analysis.refineData?.refinedContent?.headline) {
+          summary = analysis.refineData.refinedContent.headline;
+        } else if (mode === AppMode.COMPETITOR_SPY) {
+          summary = 'Competitor Analysis Report';
+        }
+        addToHistory(mode, analysis, platform, summary);
       }
     } catch (err: any) {
       let errorMessage = err.message || "Analysis Failed.";
-      if (errorMessage === "INVALID_KEY") {
-        errorMessage = "API Key Invalid.";
+      if (errorMessage.includes("INVALID_KEY") || errorMessage.includes("API key not valid")) {
+        errorMessage = "API Key Invalid or Expired.";
         setIsKeyError(true);
       }
       setError(errorMessage);
@@ -181,6 +192,8 @@ const App: React.FC = () => {
       setIsAnalyzing(false);
     }
   };
+  
+   // ... (rest of component remains the same)
 
   useEffect(() => {
     let interval: any;
@@ -300,7 +313,7 @@ const App: React.FC = () => {
                  <BookOpen className="w-4 h-4" />
                  <span className="text-xs font-bold hidden sm:block">ACADEMY</span>
               </button>
-              <button onClick={() => {if(confirm('Disconnect?')) clearApiKey()}} className="flex items-center gap-2 px-3 py-2.5 bg-slate-900 hover:bg-red-500/20 rounded-full text-slate-400 hover:text-red-400 transition-colors">
+              <button onClick={() => {if(confirm('Disconnect System?')) clearApiKey()}} className="flex items-center gap-2 px-3 py-2.5 bg-slate-900 hover:bg-red-500/20 rounded-full text-slate-400 hover:text-red-400 transition-colors">
                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                  <span className="text-xs font-bold hidden sm:block">SYSTEM ONLINE</span>
               </button>
@@ -320,7 +333,7 @@ const App: React.FC = () => {
         <div className="mb-12">
            {mode === AppMode.GENERATION && (
              <CreateView 
-                platform={platform} setPlatform={setPlatform} 
+                platform={platform} setPlatform={handleSetPlatform} 
                 config={config} setConfig={setConfig} 
                 files={files} setFiles={setFiles}
                 brandFiles={brandFiles} setBrandFiles={setBrandFiles}
@@ -332,7 +345,7 @@ const App: React.FC = () => {
                 config={config} 
                 setConfig={setConfig} 
                 platform={platform} 
-                setPlatform={setPlatform} 
+                setPlatform={handleSetPlatform} 
              />
            )}
            {mode === AppMode.COMPETITOR_SPY && (
@@ -340,11 +353,13 @@ const App: React.FC = () => {
                 files={files} setFiles={setFiles} 
                 config={config} setConfig={setConfig} 
                 isAnalyzing={isAnalyzing}
+                platform={platform}
+                setPlatform={handleSetPlatform}
              />
            )}
            {mode === AppMode.TREND_HUNTER && (
              <HuntView 
-                platform={platform} setPlatform={setPlatform}
+                platform={platform} setPlatform={handleSetPlatform}
                 config={config} setConfig={setConfig}
                 trendResults={trendResults}
                 handleUseTrend={handleUseTrend}
@@ -405,7 +420,7 @@ const App: React.FC = () => {
            )}
         </div>
 
-        {result && <AnalysisResultView result={result} mode={mode} />}
+        {result && <AnalysisResultView result={result} mode={mode} platform={platform} />}
 
       </main>
 

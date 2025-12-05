@@ -1,6 +1,3 @@
-
-
-
 import React, { useEffect } from 'react';
 import { 
   Instagram, Linkedin, Youtube, Music2, Twitter, Facebook, 
@@ -176,6 +173,17 @@ const CreateView: React.FC<CreateViewProps> = ({
                           </button>
                        ))}
                     </div>
+                 </div>
+                 {/* FIX: Add keyword input to Create mode to allow users to guide content generation. */}
+                 <div className="bg-black/30 rounded-2xl p-4 border border-white/5">
+                    <label className="text-[10px] font-bold text-slate-300 uppercase mb-2 block tracking-wider">Core Keywords (comma-separated)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. social media, marketing, AI"
+                      value={config.keywords}
+                      onChange={(e) => setConfig({...config, keywords: e.target.value})}
+                      className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-xl p-3 outline-none focus:border-indigo-500 transition-colors"
+                    />
                  </div>
                  
                  {/* Targeting Inputs */}

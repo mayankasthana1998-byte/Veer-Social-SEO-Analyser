@@ -1,8 +1,8 @@
 export enum AppMode {
-  GENERATION = 'GENERATION', // Mode A
-  REFINE = 'REFINE', // Mode B
-  COMPETITOR_SPY = 'COMPETITOR_SPY', // Mode C
-  TREND_HUNTER = 'TREND_HUNTER', // Mode D
+  GENERATION = 'GENERATION',
+  REFINE = 'REFINE',
+  COMPETITOR_SPY = 'COMPETITOR_SPY',
+  TREND_HUNTER = 'TREND_HUNTER',
 }
 
 export enum Platform {
@@ -27,26 +27,56 @@ export enum HookType {
   URGENCY_SCARCITY = 'Urgency/Scarcity',
 }
 
-export interface CompetitorRow {
-  keywords: string[];
-  hookUsed: string;
-  whyItWins: string;
-  rankingStrategy: string;
-  impactScore: number;
+export interface SpyReportRow {
+  analysis: string;
+  keywords: string;
+  strategy: string;
+  learning: string;
+}
+
+export interface OptimizationIdea {
+  title: string;
+  idea: string;
+}
+
+// NEW: Dedicated Structure for Refine Mode for type safety and UI stability
+export interface RefineData {
+  audit: {
+    score: number;
+    flaw: string;
+    fix: string;
+    explanation: string;
+  };
+  refinedContent: {
+    headline: string;
+    body: string;
+    cta: string;
+    hashtags: string[]; // Use array for perfect formatting
+  };
 }
 
 export interface AnalysisResult {
-  visualAudit: {
+  // Shared
+  virality: {
+    score: number;
+    baselineScore?: number;
+    gapAnalysis: string;
+    trendDetected?: string; 
+    vibe?: string; 
+  };
+  
+  // Mode A: Generation Data
+  visualAudit?: {
     summary: string;
     hookIdentified: HookType;
     psychologyCheck: string;
   };
-  strategy: {
+  strategy?: {
     headline: string;
-    caption: string;
+    caption: string; // Used for GENERATION and Instagram Create Markdown
     cta: string;
   };
-  seo: {
+  seo?: {
     hiddenKeywords: string[];
     hashtags: {
       broad: string[];
@@ -54,23 +84,19 @@ export interface AnalysisResult {
       specific: string[];
     };
   };
-  virality: {
-    score: number; // The Optimized Score (After AI)
-    baselineScore?: number; // The Raw Input Score (Before AI)
-    gapAnalysis: string;
-    trendDetected?: string; 
-    vibe?: string; 
-  };
+  
+  // Mode B: Refine Data (New Strict Structure)
+  refineData?: RefineData;
+
+  // Mode C: Spy Data
   competitorInsights?: {
-    visualTheme: string;
-    ctaStrategy: string;
-    formula: string;
-    spyMatrix?: CompetitorRow[];
+    visualTheme?: string;
+    ctaStrategy?: string;
+    formula?: string;
+    spyReport?: SpyReportRow[];
   }; 
-  optimizationIdeas?: {
-    title: string;
-    idea: string;
-  }[];
+  
+  optimizationIdeas?: OptimizationIdea[];
 }
 
 export interface TrendItem {
@@ -107,10 +133,9 @@ export interface ConfigState {
   demographics: string;
   brandGuidelines: string;
   niche: string;
-  // Enhanced Targeting
   tone: string[];
   engagementGoal: string[];
   contentFormat: string;
-  refinePlatform?: Platform;
-  refineFormat?: string;
+  refinePlatform: Platform;
+  refineFormat: string;
 }
