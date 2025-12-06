@@ -31,22 +31,19 @@ const App: React.FC = () => {
     niche: '',
     tone: [],
     engagementGoal: [],
-    contentFormat: '',
-    refinePlatform: Platform.INSTAGRAM,
-    refineFormat: ''
+    contentFormat: 'Reel',
+    refineFormat: 'Post'
   });
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [trendResults, setTrendResults] = useState<TrendItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isKeyError, setIsKeyError] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState('');
   
   const [showMasterclass, setShowMasterclass] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('HAS_SEEN_WELCOME'));
   const [copiedTrendIndex, setCopiedTrendIndex] = useState<number | null>(null);
 
   const [history, setHistory] = useState<HistoryItem[]>(() => {
@@ -54,19 +51,38 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
-  const addToHistory = (mode: AppMode, data: AnalysisResult | TrendItem[], platform?: Platform, summary?: string) => {
+  const addToHistory = (mode: AppMode, data: AnalysisResult | TrendItem[], platform: Platform) => {
+    let summary = 'Analysis Report';
+    try {
+       if (mode === AppMode.GENERATION && (data as AnalysisResult).strategy?.headline) {
+        summary = (data as AnalysisResult).strategy.headline;
+      } else if (mode === AppMode.REFINE && (data as AnalysisResult).refineData?.refinedContent?.headline) {
+        summary = `Refined: ${(data as AnalysisResult).refineData.refinedContent.headline}`;
+      } else if (mode === AppMode.COMPETITOR_SPY) {
+        summary = 'Competitor Analysis Report';
+      } else if (mode === AppMode.TREND_HUNTER && config.niche) {
+        summary = `Trend Hunt: ${config.niche}`;
+      } else {
+         summary = `Analysis - ${new Date().toLocaleDateString()}`;
+      }
+    } catch(e) {
+      console.error("Error creating history summary:", e);
+      summary = `Analysis - ${new Date().toISOString()}`;
+    }
+    
     const newItem: HistoryItem = {
       id: Date.now().toString(),
       timestamp: Date.now(),
       mode,
       platform,
       data,
-      summary: summary || 'Analysis Report'
+      summary
     };
     const updatedHistory = [newItem, ...history].slice(0, 50);
     setHistory(updatedHistory);
     localStorage.setItem('SOCIAL_SEO_HISTORY', JSON.stringify(updatedHistory));
   };
+
 
   const deleteFromHistory = (id: string) => {
     const updated = history.filter(h => h.id !== id);
@@ -95,58 +111,7 @@ const App: React.FC = () => {
     setShowSearch(false);
   };
 
-  const [apiKey, setApiKey] = useState<string>('');
-  const [apiKeyInput, setApiKeyInput] = useState('');
-  const [showGatekeeper, setShowGatekeeper] = useState(true);
-
-  useEffect(() => {
-    const storedKey = localStorage.getItem('GEMINI_API_KEY');
-    const key = storedKey || process.env.API_KEY;
-    if (key) {
-      setApiKey(key);
-      setShowGatekeeper(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!showGatekeeper) {
-      const hasSeenWelcome = localStorage.getItem('HAS_SEEN_WELCOME');
-      if (!hasSeenWelcome) {
-        const timer = setTimeout(() => {
-          setShowWelcome(true);
-        }, 1000);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [showGatekeeper]);
-
-  const handleSetPlatform = (p: Platform) => {
-    setPlatform(p);
-    setConfig(prev => ({ ...prev, refinePlatform: p }));
-  };
-
-  const handleSaveKey = () => {
-    const keyToSave = apiKeyInput.trim();
-    if (!keyToSave.startsWith('AIza')) {
-      alert('This does not look like a valid Gemini API Key.');
-      return;
-    }
-    localStorage.setItem('GEMINI_API_KEY', keyToSave);
-    setApiKey(keyToSave);
-    setShowGatekeeper(false);
-    setIsKeyError(false);
-    setError(null);
-  };
-
-  const clearApiKey = () => {
-    localStorage.removeItem('GEMINI_API_KEY');
-    setApiKey('');
-    setApiKeyInput('');
-    setShowGatekeeper(true);
-  };
-
   const handleAnalyze = async () => {
-    // Input validation
     if (mode === AppMode.GENERATION && files.length === 0 && !config.keywords) { alert("Please upload media or provide keywords for generation."); return; }
     if (mode === AppMode.REFINE && !config.originalText) { alert("Please provide text in the 'Raw Content Input' field to refine."); return; }
     if (mode === AppMode.TREND_HUNTER && !config.niche) { alert("Please enter a niche to hunt for trends."); return; }
@@ -154,71 +119,45 @@ const App: React.FC = () => {
 
     setIsAnalyzing(true);
     setError(null);
-    setIsKeyError(false);
     setResult(null);
     setTrendResults(null);
 
+    const startTime = Date.now();
+    const updateInterval = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      if (mode === AppMode.REFINE) {
+        setLoadingMessage(`Performing Deep Analysis (this may take a moment)... ${elapsed.toFixed(1)}s`);
+      } else {
+        setLoadingMessage(`Processing... ${elapsed.toFixed(1)}s`);
+      }
+    }, 100);
+
     try {
       const filesToAnalyze = files.map(f => f.file);
-      const data = await analyzeContent(apiKey, filesToAnalyze, mode, platform, config);
+      // FIX: API key is handled by geminiService via environment variables.
+      const data = await analyzeContent(filesToAnalyze, mode, platform, config);
       
       if (mode === AppMode.TREND_HUNTER) {
         const trends = data as TrendItem[];
         setTrendResults(trends);
-        addToHistory(mode, trends, platform, `Trend Hunt: ${config.niche}`);
+        addToHistory(mode, trends, platform);
       } else {
         const analysis = data as AnalysisResult;
         setResult(analysis);
-        
-        // **CRASH FIX**: Generate summary based on the actual data available for the mode.
-        let summary = 'Strategy Analysis';
-        if (mode === AppMode.GENERATION && analysis.strategy?.headline) {
-          summary = analysis.strategy.headline;
-        } else if (mode === AppMode.REFINE && analysis.refineData?.refinedContent?.headline) {
-          summary = analysis.refineData.refinedContent.headline;
-        } else if (mode === AppMode.COMPETITOR_SPY) {
-          summary = 'Competitor Analysis Report';
-        }
-        addToHistory(mode, analysis, platform, summary);
+        addToHistory(mode, analysis, platform);
       }
     } catch (err: any) {
-      let errorMessage = err.message || "Analysis Failed.";
-      if (errorMessage.includes("INVALID_KEY") || errorMessage.includes("API key not valid")) {
-        errorMessage = "API Key Invalid or Expired.";
-        setIsKeyError(true);
-      }
-      setError(errorMessage);
+      // FIX: Simplify error handling per guidelines.
+      setError("Oops! The AI got confused. Please check your API Key and try again.");
     } finally {
+      clearInterval(updateInterval);
       setIsAnalyzing(false);
     }
   };
-  
-   // ... (rest of component remains the same)
-
-  useEffect(() => {
-    let interval: any;
-    if (isAnalyzing) {
-      setLoadingProgress(0);
-      setLoadingMessage('Initializing System...');
-      const startTime = Date.now();
-      const estimatedDuration = 15000; 
-      interval = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        let progress = (elapsed / estimatedDuration) * 100;
-        if (progress > 90) progress = 90;
-        setLoadingProgress(progress);
-        if (progress < 30) setLoadingMessage('Analyzing Vectors...');
-        else if (progress < 60) setLoadingMessage('Applying Psychology...');
-        else setLoadingMessage('Finalizing Strategy...');
-      }, 100);
-    } else {
-      if (result || trendResults) setLoadingProgress(100);
-    }
-    return () => { if (interval) clearInterval(interval); };
-  }, [isAnalyzing, result, trendResults]);
 
   const handleUseTrend = (trend: TrendItem) => {
     setMode(AppMode.GENERATION);
+    if(trend.platform) setPlatform(trend.platform as Platform);
     setConfig(prev => ({
       ...prev,
       tone: ['Urgent', 'Hype'],
@@ -234,10 +173,14 @@ const App: React.FC = () => {
     setCopiedTrendIndex(index);
     setTimeout(() => setCopiedTrendIndex(null), 2000);
   };
+  
+  const handleSetPlatform = (p: Platform) => {
+    setPlatform(p);
+  };
 
   const ModeTab = ({ m, label, icon: Icon }: { m: AppMode, label: string, icon: any }) => (
     <button
-      onClick={() => { setMode(m); setResult(null); setTrendResults(null); if(m !== AppMode.TREND_HUNTER) setFiles([]); }}
+      onClick={() => { setMode(m); setResult(null); setTrendResults(null); setFiles([]); }}
       className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm transition-all duration-300 ${
         mode === m 
           ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.4)] scale-105' 
@@ -248,42 +191,6 @@ const App: React.FC = () => {
       {label}
     </button>
   );
-
-  if (showGatekeeper) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden font-inter">
-        <div className="bg-grid"></div>
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
-        <div className="relative z-10 max-w-md w-full bg-slate-900/80 backdrop-blur-xl border border-white/10 p-10 rounded-[2rem] shadow-2xl">
-          <div className="flex justify-center mb-8">
-            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.2)]">
-              <Sparkles className="w-8 h-8 text-black" />
-            </div>
-          </div>
-          <h1 className="text-3xl font-black text-center text-white mb-2 tracking-tighter">SocialSEO</h1>
-          <p className="text-slate-500 text-center text-xs mb-8 font-bold tracking-widest uppercase">System Initialization</p>
-          <div className="space-y-4">
-            <input 
-              type="password" 
-              value={apiKeyInput}
-              onChange={(e) => setApiKeyInput(e.target.value)}
-              placeholder="Enter Gemini API Key (AIza...)"
-              className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-white focus:border-indigo-500 outline-none text-sm font-mono text-center"
-            />
-            <button 
-              onClick={handleSaveKey}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-indigo-500/30 text-sm tracking-wide"
-            >
-              CONNECT SYSTEM
-            </button>
-            <a href="https://aistudio.google.com/app/apikey" target="_blank" className="block text-center text-[10px] text-indigo-400 hover:text-white mt-4 font-bold uppercase tracking-wider">
-              Get Free Key &rarr;
-            </a>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#020205] text-slate-200 pb-20 font-inter selection:bg-indigo-500/30">
@@ -313,10 +220,11 @@ const App: React.FC = () => {
                  <BookOpen className="w-4 h-4" />
                  <span className="text-xs font-bold hidden sm:block">ACADEMY</span>
               </button>
-              <button onClick={() => {if(confirm('Disconnect System?')) clearApiKey()}} className="flex items-center gap-2 px-3 py-2.5 bg-slate-900 hover:bg-red-500/20 rounded-full text-slate-400 hover:text-red-400 transition-colors">
+              {/* FIX: Removed API key logic and disconnect button, replaced with static indicator */}
+              <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-900 rounded-full text-slate-400">
                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                  <span className="text-xs font-bold hidden sm:block">SYSTEM ONLINE</span>
-              </button>
+              </div>
            </div>
         </div>
         
@@ -333,10 +241,14 @@ const App: React.FC = () => {
         <div className="mb-12">
            {mode === AppMode.GENERATION && (
              <CreateView 
-                platform={platform} setPlatform={handleSetPlatform} 
-                config={config} setConfig={setConfig} 
-                files={files} setFiles={setFiles}
-                brandFiles={brandFiles} setBrandFiles={setBrandFiles}
+                platform={platform} 
+                setPlatform={handleSetPlatform} 
+                config={config} 
+                setConfig={setConfig} 
+                files={files} 
+                setFiles={setFiles}
+                brandFiles={brandFiles} 
+                setBrandFiles={setBrandFiles}
                 isAnalyzing={isAnalyzing}
              />
            )}
@@ -378,7 +290,7 @@ const App: React.FC = () => {
               {isAnalyzing ? (
                  <>
                    <Loader2 className="w-6 h-6 animate-spin" />
-                   <span>PROCESSING DATA...</span>
+                   <span>{loadingMessage || 'ANALYZING...'}</span>
                  </>
               ) : (
                  <>
@@ -399,11 +311,6 @@ const App: React.FC = () => {
                     <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                     {error}
                  </p>
-                 {isKeyError && (
-                    <button onClick={clearApiKey} className="mt-2 text-xs font-bold text-white underline decoration-red-500 underline-offset-4">
-                       RESET API KEY
-                    </button>
-                 )}
               </div>
            )}
 
@@ -411,16 +318,12 @@ const App: React.FC = () => {
               <div className="mt-6">
                  <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">
                     <span>{loadingMessage}</span>
-                    <span>{Math.round(loadingProgress)}%</span>
-                 </div>
-                 <div className="h-2 bg-slate-900 rounded-full overflow-hidden">
-                    <div className="h-full bg-indigo-500 transition-all duration-300" style={{ width: `${loadingProgress}%` }}></div>
                  </div>
               </div>
            )}
         </div>
 
-        {result && <AnalysisResultView result={result} mode={mode} platform={platform} />}
+        {result && <AnalysisResultView result={result} mode={mode} platform={platform} format={config.contentFormat} />}
 
       </main>
 

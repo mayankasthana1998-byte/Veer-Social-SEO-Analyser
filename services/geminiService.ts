@@ -101,16 +101,15 @@ const cleanJson = (text: string) => {
 };
 
 export const analyzeContent = async (
-  apiKey: string, 
   files: File[],
   mode: AppMode,
   platform: Platform,
   config: any
 ): Promise<AnalysisResult | TrendItem[]> => {
   try {
-    if (!apiKey) throw new Error("MISSING_KEY");
-    const ai = new GoogleGenAI({ apiKey: apiKey });
-    const currentDate = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+    // FIX: Per Gemini guidelines, API key must be sourced from environment variables directly.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const currentDate = new Date().toLocaleString('default', { month: 'long', 'year': 'numeric' });
 
     const targeting = [
       config.geography ? `Target Geography: ${config.geography}` : '',
@@ -119,7 +118,7 @@ export const analyzeContent = async (
 
     let promptText = "";
     
-    // SMART MODEL TIERING & CONFIGURATION
+    // Use the faster model for all modes to ensure a responsive UI.
     const modelName = 'gemini-2.5-flash';
     const generateConfig: any = { systemInstruction: SYSTEM_INSTRUCTION };
 
@@ -131,7 +130,7 @@ export const analyzeContent = async (
       if (mode === AppMode.GENERATION) {
         promptText += MODE_PROMPTS.GENERATION(platform, config.engagementGoal || [], config.tone || [], config.contentFormat || 'Standard', targeting, config.keywords || '');
       } else if (mode === AppMode.REFINE) {
-        promptText += MODE_PROMPTS.REFINE(config.originalText || '', config.keywords || '', targeting, config.refinePlatform, config.refineFormat);
+        promptText += MODE_PROMPTS.REFINE(config.originalText || '', config.keywords || '', targeting, platform, config.refineFormat, config.tone || []);
       } else if (mode === AppMode.COMPETITOR_SPY) {
         promptText += MODE_PROMPTS.COMPETITOR_SPY(platform, files.length, config.originalText || 'No text', targeting);
       }
@@ -169,14 +168,24 @@ export const analyzeContent = async (
       generateConfig.responseSchema = {
         type: Type.OBJECT,
         properties: {
-          virality: { type: Type.OBJECT, properties: { score: { type: Type.NUMBER }, baselineScore: { type: Type.NUMBER }, gapAnalysis: { type: Type.STRING }}},
+          virality: { type: Type.OBJECT, properties: { score: { type: Type.INTEGER }, baselineScore: { type: Type.INTEGER }, gapAnalysis: { type: Type.STRING }}},
           visualAudit: { type: Type.OBJECT, properties: { summary: { type: Type.STRING }, hookIdentified: { type: Type.STRING }, psychologyCheck: { type: Type.STRING }}},
           strategy: { type: Type.OBJECT, properties: { headline: { type: Type.STRING }, caption: { type: Type.STRING }, cta: { type: Type.STRING }}},
-          seo: { type: Type.OBJECT, properties: { hiddenKeywords: { type: Type.ARRAY, items: { type: Type.STRING } }, hashtags: { type: Type.OBJECT, properties: { broad: { type: Type.ARRAY, items: { type: Type.STRING } }, niche: { type: Type.ARRAY, items: { type: Type.STRING } }, specific: { type: Type.ARRAY, items: { type: Type.STRING } } } } } },
+          seo: { type: Type.OBJECT, properties: { 
+            hiddenKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+            videoTags: { type: Type.ARRAY, items: { type: Type.STRING } },
+            hashtags: { type: Type.ARRAY, items: { type: Type.STRING } } 
+          }},
           refineData: {
             type: Type.OBJECT, properties: {
-              audit: { type: Type.OBJECT, properties: { score: { type: Type.NUMBER }, flaw: { type: Type.STRING }, fix: { type: Type.STRING }, explanation: { type: Type.STRING }}},
-              refinedContent: { type: Type.OBJECT, properties: { headline: { type: Type.STRING }, body: { type: Type.STRING }, cta: { type: Type.STRING }, hashtags: { type: Type.ARRAY, items: { type: Type.STRING } } }}
+              audit: { type: Type.OBJECT, properties: { score: { type: Type.INTEGER }, flaw: { type: Type.STRING }, fix: { type: Type.STRING }, explanation: { type: Type.STRING }}},
+              refinedContent: { type: Type.OBJECT, properties: { 
+                headline: { type: Type.STRING }, 
+                body: { type: Type.STRING }, 
+                cta: { type: Type.STRING }, 
+                hashtags: { type: Type.ARRAY, items: { type: Type.STRING } },
+                videoTags: { type: Type.ARRAY, items: { type: Type.STRING } }
+              }}
             }
           },
           optimizationIdeas: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, idea: { type: Type.STRING } } } }
@@ -203,8 +212,17 @@ export const analyzeContent = async (
     }
     
     if (mode === AppMode.COMPETITOR_SPY) {
-        if (parsed.spyReport) return { competitorInsights: { spyReport: parsed.spyReport } } as unknown as AnalysisResult;
-        if (Array.isArray(parsed)) return { competitorInsights: { spyReport: parsed } } as unknown as AnalysisResult;
+        const result: AnalysisResult = {};
+        if (parsed.spyReport) {
+          result.competitorInsights = { spyReport: parsed.spyReport };
+        } else if (Array.isArray(parsed)) {
+          result.competitorInsights = { spyReport: parsed };
+        }
+        // FIX: Attach grounding metadata as per Gemini guidelines
+        if (response.candidates?.[0]?.groundingMetadata) {
+            result.groundingMetadata = response.candidates[0].groundingMetadata as any;
+        }
+        return result;
     }
     if (mode === AppMode.TREND_HUNTER) {
       if (parsed.trends) return parsed.trends as TrendItem[];

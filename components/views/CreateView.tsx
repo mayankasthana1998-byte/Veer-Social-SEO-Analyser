@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { Platform, FileInput } from '../../types';
 import FileUpload from '../FileUpload';
+import { TONE_OPTIONS } from '../../constants';
 
 interface CreateViewProps {
   platform: Platform;
@@ -18,29 +19,31 @@ interface CreateViewProps {
   isAnalyzing: boolean;
 }
 
-const TONE_OPTIONS = ['Professional', 'Casual', 'Humorous', 'Contrarian', 'Empathetic', 'Authoritative', 'Urgent', 'Wholesome', 'Sarcastic', 'Inspirational'];
 const GOAL_OPTIONS = ['Viral Reach', 'Saves', 'Shares', 'Comments', 'Clicks', 'Sales'];
 
 const PLATFORM_FORMATS: Record<Platform, string[]> = {
   [Platform.INSTAGRAM]: ['Reel', 'Carousel', 'Static Post', 'Story'],
   [Platform.TIKTOK]: ['Vlog', 'Green Screen', 'Skit', 'Photo Mode'],
-  [Platform.YOUTUBE]: ['Shorts', 'Long-form', 'Community Post'],
+  [Platform.YOUTUBE]: ['Shorts', 'Long-form'],
   [Platform.LINKEDIN]: ['Text Only', 'PDF/Carousel', 'Article', 'Video'],
   [Platform.TWITTER]: ['Thread', 'Short Tweet', 'Media Post'],
   [Platform.FACEBOOK]: ['Video', 'Image Post', 'Text Post'],
 };
 
 const CreateView: React.FC<CreateViewProps> = ({ 
-  platform, setPlatform, config, setConfig, files, setFiles, brandFiles, setBrandFiles, isAnalyzing 
+  platform, setPlatform: handleSetPlatform, config, setConfig, files, setFiles, brandFiles, setBrandFiles, isAnalyzing 
 }) => {
+
+  const availableTones = TONE_OPTIONS[platform] || TONE_OPTIONS.default;
 
   // Reset Format when Platform changes
   useEffect(() => {
     setConfig((prev: any) => ({
        ...prev,
-       contentFormat: PLATFORM_FORMATS[platform][0]
+       contentFormat: PLATFORM_FORMATS[platform][0],
+       tone: [], // Also reset tones when platform changes
     }));
-  }, [platform]);
+  }, [platform, setConfig]);
 
   const toggleSelection = (field: 'tone' | 'engagementGoal', value: string) => {
     const current = config[field];
@@ -104,7 +107,7 @@ const CreateView: React.FC<CreateViewProps> = ({
               ].map((p) => (
                 <button
                   key={p.id}
-                  onClick={() => setPlatform(p.id)}
+                  onClick={() => handleSetPlatform(p.id)}
                   className={`flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border transition-all duration-300 ${getPlatformStyle(p.id, platform === p.id)} ${platform === p.id ? 'scale-105' : ''}`}
                 >
                   <p.icon size={20} />
@@ -159,7 +162,7 @@ const CreateView: React.FC<CreateViewProps> = ({
                  <div className="bg-black/30 rounded-2xl p-4 border border-white/5">
                     <label className="text-[10px] font-bold text-cyan-400 uppercase mb-3 block tracking-wider">Tone of Voice (Multi)</label>
                     <div className="flex flex-wrap gap-2">
-                       {TONE_OPTIONS.map((t) => (
+                       {availableTones.map((t) => (
                           <button 
                              key={t}
                              onClick={() => toggleSelection('tone', t)}
@@ -174,7 +177,6 @@ const CreateView: React.FC<CreateViewProps> = ({
                        ))}
                     </div>
                  </div>
-                 {/* FIX: Add keyword input to Create mode to allow users to guide content generation. */}
                  <div className="bg-black/30 rounded-2xl p-4 border border-white/5">
                     <label className="text-[10px] font-bold text-slate-300 uppercase mb-2 block tracking-wider">Core Keywords (comma-separated)</label>
                     <input

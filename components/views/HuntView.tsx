@@ -14,7 +14,7 @@ interface HuntViewProps {
 }
 
 const HuntView: React.FC<HuntViewProps> = ({ 
-  platform, setPlatform, config, setConfig, 
+  platform, setPlatform: handleSetPlatform, config, setConfig, 
   trendResults, handleUseTrend, handleCopyTrend, copiedTrendIndex 
 }) => {
 
@@ -68,7 +68,7 @@ const HuntView: React.FC<HuntViewProps> = ({
             ].map((p) => (
               <button
                 key={p.id}
-                onClick={() => setPlatform(p.id)}
+                onClick={() => handleSetPlatform(p.id)}
                 className={`flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border transition-all duration-300 ${getPlatformStyle(p.id, platform === p.id)} ${platform === p.id ? 'scale-105' : ''}`}
               >
                 <p.icon size={20} />

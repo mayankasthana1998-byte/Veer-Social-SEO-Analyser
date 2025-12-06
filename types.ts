@@ -52,17 +52,18 @@ export interface RefineData {
     body: string;
     cta: string;
     hashtags: string[]; // Use array for perfect formatting
+    videoTags?: string[]; // YouTube specific
   };
 }
 
 export interface AnalysisResult {
   // Shared
-  virality: {
+  virality?: {
     score: number;
     baselineScore?: number;
     gapAnalysis: string;
-    trendDetected?: string; 
-    vibe?: string; 
+    trendDetected?: string;
+    vibe?: string;
   };
   
   // Mode A: Generation Data
@@ -78,11 +79,8 @@ export interface AnalysisResult {
   };
   seo?: {
     hiddenKeywords: string[];
-    hashtags: {
-      broad: string[];
-      niche: string[];
-      specific: string[];
-    };
+    videoTags?: string[]; // YouTube Specific
+    hashtags: string[]; // Simplified from object to array
   };
   
   // Mode B: Refine Data (New Strict Structure)
@@ -94,9 +92,14 @@ export interface AnalysisResult {
     ctaStrategy?: string;
     formula?: string;
     spyReport?: SpyReportRow[];
-  }; 
+  };
   
   optimizationIdeas?: OptimizationIdea[];
+
+  // Add grounding metadata for search results
+  groundingMetadata?: {
+    groundingChunks: { web: { uri: string; title: string } }[];
+  };
 }
 
 export interface TrendItem {
@@ -136,6 +139,5 @@ export interface ConfigState {
   tone: string[];
   engagementGoal: string[];
   contentFormat: string;
-  refinePlatform: Platform;
   refineFormat: string;
 }

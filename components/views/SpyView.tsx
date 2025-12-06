@@ -13,7 +13,7 @@ interface SpyViewProps {
   setPlatform: (p: Platform) => void;
 }
 
-const SpyView: React.FC<SpyViewProps> = ({ files, setFiles, config, setConfig, isAnalyzing, platform, setPlatform }) => {
+const SpyView: React.FC<SpyViewProps> = ({ files, setFiles, config, setConfig, isAnalyzing, platform, setPlatform: handleSetPlatform }) => {
   
   const getPlatformStyle = (p: Platform, isSelected: boolean) => {
     if (!isSelected) return 'bg-slate-900/40 border-slate-800 text-slate-500 hover:bg-slate-800 hover:text-white';
@@ -67,7 +67,7 @@ const SpyView: React.FC<SpyViewProps> = ({ files, setFiles, config, setConfig, i
                     ].map((p) => (
                       <button
                         key={p.id}
-                        onClick={() => setPlatform(p.id)}
+                        onClick={() => handleSetPlatform(p.id)}
                         className={`flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border transition-all duration-300 ${getPlatformStyle(p.id, platform === p.id)} ${platform === p.id ? 'scale-105' : ''}`}
                       >
                         <p.icon size={20} />
@@ -78,12 +78,12 @@ const SpyView: React.FC<SpyViewProps> = ({ files, setFiles, config, setConfig, i
                 </div>
 
                <p className="text-sm text-slate-400 mb-4 leading-relaxed">
-                  Paste the exact captions used by your competitors. The AI will cross-reference this text with the visual patterns found in your uploaded screenshots.
+                  Paste the competitor's post URL, or their exact captions. The AI will cross-reference this text with the visual patterns found in your uploaded screenshots/videos.
                </p>
 
                <textarea 
                   className="w-full h-60 bg-black/40 border border-cyan-500/30 rounded-xl p-5 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono leading-relaxed placeholder-slate-600"
-                  placeholder="// PASTE COMPETITOR CAPTIONS HERE..."
+                  placeholder="PASTE COMPETITOR URL OR CAPTION HERE..."
                   value={config.originalText}
                   onChange={(e) => setConfig({...config, originalText: e.target.value})}
                />
@@ -103,7 +103,7 @@ const SpyView: React.FC<SpyViewProps> = ({ files, setFiles, config, setConfig, i
                </div>
                
                <p className="text-sm text-slate-400 mb-6">
-                  Upload at least 2 screenshots or videos of viral posts.
+                  Upload screenshots or videos of viral posts (optional if URL is provided).
                </p>
 
                <FileUpload files={files} setFiles={setFiles} multiple={true} isAnalyzing={isAnalyzing} />

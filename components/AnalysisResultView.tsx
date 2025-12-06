@@ -1,12 +1,13 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { AnalysisResult, AppMode, Platform, SpyReportRow } from '../types';
-import { Copy, TrendingUp, BarChart3, FileText, BrainCircuit, Check } from 'lucide-react';
+import { Copy, TrendingUp, BarChart3, FileText, BrainCircuit, Check, Youtube, FileVideo, Hash, Tag, Search } from 'lucide-react';
 import PlatformSpecificResultView from './PlatformSpecificResultView';
 
 interface AnalysisResultViewProps {
   result: AnalysisResult;
   mode: AppMode;
   platform: Platform;
+  format: string;
 }
 
 const CopyButton = ({ text, className = "", label = "", iconClass = "w-3 h-3" }: { text: string, className?: string, label?: string, iconClass?: string }) => {
@@ -26,7 +27,7 @@ const CopyButton = ({ text, className = "", label = "", iconClass = "w-3 h-3" }:
 };
 
 const OptimizationDeltaCard: React.FC<{ result: AnalysisResult }> = ({ result }) => {
-  const baseline = result.virality?.baselineScore ?? result.refineData?.audit.score ?? 0;
+  const baseline = result.virality?.baselineScore ?? result.refineData?.audit?.score ?? 0;
   const finalScore = result.virality?.score;
 
   if (finalScore === undefined) return null;
@@ -73,7 +74,7 @@ const OptimizationDeltaCard: React.FC<{ result: AnalysisResult }> = ({ result })
   );
 };
 
-const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, platform }) => {
+const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, platform, format }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -117,6 +118,27 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, p
               </table>
             </div>
         </div>
+        
+        {/* FIX: Display grounding metadata as per Gemini guidelines */}
+        {result.groundingMetadata && result.groundingMetadata.groundingChunks?.length > 0 && (
+          <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-[2rem] backdrop-blur-md">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-indigo-500/10 rounded-xl border border-indigo-500/20"><Search className="w-5 h-5 text-indigo-400" /></div>
+              <h3 className="text-sm font-black text-white uppercase tracking-wider">Analysis Sources</h3>
+            </div>
+            <ul className="space-y-2">
+              {result.groundingMetadata.groundingChunks.map((chunk, index) => (
+                chunk.web && (
+                  <li key={index} className="text-xs font-mono bg-black/30 p-3 rounded-lg border border-white/5">
+                    <a href={chunk.web.uri} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline break-all">
+                      {index + 1}. {chunk.web.title || chunk.web.uri}
+                    </a>
+                  </li>
+                )
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     );
   }
@@ -152,10 +174,70 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, p
     );
   }
   
-  // RENDER PATH 4: DEFAULT BLUEPRINT VIEW (for non-Instagram Generation)
-  if (mode === AppMode.GENERATION && result.strategy && result.seo && result.visualAudit && result.virality) {
-     const hashtagsString = `${result.seo.hashtags?.broad?.join(' ') || ''} ${result.seo.hashtags?.niche?.join(' ') || ''} ${result.seo.hashtags?.specific?.join(' ') || ''}`;
-     const fullReportText = `...`; 
+  // RENDER PATH 4: YOUTUBE CREATE MODE
+  if (mode === AppMode.GENERATION && platform === Platform.YOUTUBE && result.strategy) {
+    const title = format === 'Shorts' ? "YouTube Shorts Blueprint" : "YouTube Long-Form Blueprint";
+    const description = result.strategy.caption || '';
+    const videoTagsString = result.seo?.videoTags?.join(', ') || '';
+    const hashtagsString = result.seo?.hashtags?.map(h => `#${h.replace('#', '')}`).join(' ') || '';
+
+    return (
+       <div ref={containerRef} className="space-y-6 animate-fade-in pb-12">
+        {(result.virality?.baselineScore !== undefined) && <OptimizationDeltaCard result={result} />}
+        <div className="bg-slate-900/60 border border-slate-800 rounded-[2rem] backdrop-blur-md p-8">
+            <div className="flex items-center justify-between gap-3 mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-500/10 rounded-xl border border-red-500/20"><Youtube className="w-5 h-5 text-red-400" /></div>
+                    <h3 className="text-sm font-black text-white uppercase tracking-wider">{title}</h3>
+                </div>
+            </div>
+            <div className="space-y-4">
+                {/* Title */}
+                <div className="bg-black/30 p-4 rounded-xl border border-white/5">
+                    <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Optimized Title</label>
+                        <CopyButton text={result.strategy.headline} />
+                    </div>
+                    <p className="text-white font-bold text-lg mt-2">{result.strategy.headline}</p>
+                </div>
+                {/* Description */}
+                <div className="bg-black/30 p-4 rounded-xl border border-white/5">
+                    <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Optimized Description</label>
+                        <CopyButton text={description} />
+                    </div>
+                    <p className="text-slate-300 whitespace-pre-wrap text-sm mt-2 font-mono leading-relaxed">{description}</p>
+                </div>
+                {/* Hashtags */}
+                {hashtagsString && (
+                  <div className="bg-black/30 p-4 rounded-xl border border-white/5">
+                      <div className="flex justify-between items-center">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2"><Hash className="w-3 h-3"/>Hashtags</label>
+                          <CopyButton text={hashtagsString} />
+                      </div>
+                      <p className="text-indigo-300 whitespace-pre-wrap text-xs mt-2 font-mono leading-relaxed">{hashtagsString}</p>
+                  </div>
+                )}
+                {/* Video Tags */}
+                {videoTagsString && (
+                  <div className="bg-black/30 p-4 rounded-xl border border-white/5">
+                      <div className="flex justify-between items-center">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2"><Tag className="w-3 h-3"/>Video Tags (Keywords)</label>
+                          <CopyButton text={videoTagsString} />
+                      </div>
+                      <p className="text-cyan-300 whitespace-pre-wrap text-xs mt-2 font-mono leading-relaxed">{videoTagsString}</p>
+                  </div>
+                )}
+            </div>
+        </div>
+       </div>
+    );
+  }
+  
+  // RENDER PATH 5: DEFAULT BLUEPRINT VIEW (for other platforms)
+  if (mode === AppMode.GENERATION && result.strategy && result.seo && result.virality) {
+     const hashtagsString = result.seo.hashtags?.map(h => `#${h}`).join(' ') || '';
+     const fullReportText = `${result.strategy.headline}\n\n${result.strategy.caption}\n\n${result.strategy.cta}\n\n${hashtagsString}`;
 
     return (
       <div ref={containerRef} className="space-y-6 animate-fade-in pb-12 font-inter">
@@ -180,6 +262,10 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, p
                <div className="flex items-center justify-between bg-indigo-900/20 p-4 rounded-2xl border border-indigo-500/20">
                   <span className="text-xs font-black text-indigo-300 uppercase">Call To Action</span>
                   <span className="text-white font-bold">{result.strategy.cta}</span>
+               </div>
+               <div>
+                 <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-3 block">Hashtags</span>
+                 <p className="text-indigo-400 text-sm font-medium leading-relaxed mt-2">{result.seo.hashtags?.map(h => `#${h}`).join(' ')}</p>
                </div>
             </div>
           </div>

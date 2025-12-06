@@ -25,8 +25,14 @@ const PlatformSpecificResultView: React.FC<Props> = ({ data, platform }) => {
   const Icon = config.icon;
 
   const handleCopy = () => {
-    const hashtags = refinedContent.hashtags.map(h => `#${h.replace('#', '')}`).join(' ');
-    const fullPost = `${refinedContent.headline}\n\n${refinedContent.body}\n\n${refinedContent.cta}\n\n${hashtags}`;
+    let fullPost = '';
+    if (platform === Platform.YOUTUBE) {
+      // For YouTube, Title and Description are separate fields
+      fullPost = `Title: ${refinedContent.headline}\n\nDescription:\n${refinedContent.body}\n\n${refinedContent.cta}`;
+    } else {
+      const hashtags = refinedContent.hashtags.map(h => `#${h.replace('#', '')}`).join(' ');
+      fullPost = `${refinedContent.headline}\n\n${refinedContent.body}\n\n${refinedContent.cta}\n\n${hashtags}`;
+    }
     navigator.clipboard.writeText(fullPost);
     alert('Optimized post copied to clipboard!');
   };
@@ -70,10 +76,29 @@ const PlatformSpecificResultView: React.FC<Props> = ({ data, platform }) => {
             </button>
          </div>
          <div className="space-y-6">
-            {refinedContent.headline && <div><p className="text-2xl font-black text-white leading-tight">{refinedContent.headline}</p></div>}
-            {refinedContent.body && <div><p className="text-slate-300 text-base leading-7 whitespace-pre-wrap">{refinedContent.body}</p></div>}
+            {refinedContent.headline && (
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">{platform === Platform.YOUTUBE ? 'Optimized Title' : 'Headline'}</label>
+                <p className="text-2xl font-black text-white leading-tight">{refinedContent.headline}</p>
+              </div>
+            )}
+            {refinedContent.body && (
+              <div>
+                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">{platform === Platform.YOUTUBE ? 'Script / Description' : 'Body'}</label>
+                 <p className="text-slate-300 text-base leading-7 whitespace-pre-wrap">{refinedContent.body}</p>
+              </div>
+            )}
             {refinedContent.cta && <div className={`p-4 rounded-xl border ${config.border} ${config.bg}`}><span className={`font-bold ${config.color}`}>{refinedContent.cta}</span></div>}
+            
+            {platform === Platform.YOUTUBE && refinedContent.videoTags && (
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">Video Tags</label>
+                <p className="text-cyan-300 text-xs font-mono leading-relaxed">{refinedContent.videoTags.join(', ')}</p>
+              </div>
+            )}
+
             {refinedContent.hashtags && refinedContent.hashtags.length > 0 && <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">Hashtags</label>
                 <div className="flex flex-wrap gap-3">
                     {refinedContent.hashtags.map((tag, i) => (
                         <span key={i} className="text-xs text-slate-400 font-mono">#{tag.replace('#', '')}</span>

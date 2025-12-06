@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Settings2, Instagram, Music2, Youtube, Linkedin, Twitter, Facebook } from 'lucide-react';
 import { Platform } from '../../types';
+import { TONE_OPTIONS } from '../../constants';
 
 interface RefineViewProps {
   config: any;
@@ -18,15 +19,27 @@ const PLATFORM_FORMATS: Record<Platform, string[]> = {
   [Platform.FACEBOOK]: ['Post', 'Video Description'],
 };
 
-const RefineView: React.FC<RefineViewProps> = ({ config, setConfig, platform, setPlatform }) => {
+const RefineView: React.FC<RefineViewProps> = ({ config, setConfig, platform, setPlatform: handleSetPlatform }) => {
+
+  const availableTones = TONE_OPTIONS[platform] || TONE_OPTIONS.default;
 
   // Reset Format when Platform changes
   useEffect(() => {
     setConfig((prev: any) => ({
        ...prev,
-       contentFormat: PLATFORM_FORMATS[platform]?.[0] || 'Post'
+       refineFormat: PLATFORM_FORMATS[platform]?.[0] || 'Post',
+       tone: [], // Also reset tones when platform changes
     }));
   }, [platform]);
+
+  const toggleSelection = (field: 'tone' | 'engagementGoal', value: string) => {
+    const current = config[field];
+    if (current.includes(value)) {
+      setConfig({ ...config, [field]: current.filter((item: string) => item !== value) });
+    } else {
+      setConfig({ ...config, [field]: [...current, value] });
+    }
+  };
 
   const getPlatformStyle = (p: Platform, isSelected: boolean) => {
     if (!isSelected) return 'bg-slate-900/40 border-slate-800 text-slate-500 hover:bg-slate-800 hover:text-white';
@@ -79,7 +92,7 @@ const RefineView: React.FC<RefineViewProps> = ({ config, setConfig, platform, se
               ].map((p) => (
                 <button
                   key={p.id}
-                  onClick={() => setPlatform(p.id)}
+                  onClick={() => handleSetPlatform(p.id)}
                   className={`flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border transition-all duration-300 ${getPlatformStyle(p.id, platform === p.id)} ${platform === p.id ? 'scale-105' : ''}`}
                 >
                   <p.icon size={20} />
@@ -93,8 +106,8 @@ const RefineView: React.FC<RefineViewProps> = ({ config, setConfig, platform, se
          <div className="mb-6 bg-black/30 rounded-2xl p-4 border border-white/5">
             <label className="text-[10px] font-bold text-pink-300 uppercase mb-2 block tracking-wider">Content Format</label>
             <select 
-              value={config.contentFormat}
-              onChange={(e) => setConfig({...config, contentFormat: e.target.value})}
+              value={config.refineFormat}
+              onChange={(e) => setConfig({...config, refineFormat: e.target.value})}
               className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-xl p-3 outline-none focus:border-pink-500 transition-colors"
             >
               {PLATFORM_FORMATS[platform]?.map((fmt) => (
@@ -102,6 +115,26 @@ const RefineView: React.FC<RefineViewProps> = ({ config, setConfig, platform, se
               ))}
             </select>
          </div>
+
+         {/* Tone Selector */}
+          <div className="mb-6 bg-black/30 rounded-2xl p-4 border border-white/5">
+              <label className="text-[10px] font-bold text-cyan-400 uppercase mb-3 block tracking-wider">Tone of Voice (Optional)</label>
+              <div className="flex flex-wrap gap-2">
+                  {availableTones.map((t) => (
+                      <button 
+                          key={t}
+                          onClick={() => toggleSelection('tone', t)}
+                          className={`px-3 py-2 rounded-xl text-[10px] font-bold border transition-all ${
+                              config.tone.includes(t)
+                              ? 'bg-cyan-600 border-cyan-500 text-white shadow-lg shadow-cyan-600/20'
+                              : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600 hover:text-white'
+                          }`}
+                      >
+                          {t}
+                      </button>
+                  ))}
+              </div>
+          </div>
 
          <div className="space-y-6">
             <div>
