@@ -9,6 +9,25 @@ export const TONE_OPTIONS: { default: string[], [key: string]: string[] } = {
   [Platform.TWITTER]: ['Controversial/Polarizing', 'Inspirational/Awe-Inspiring', 'Humorous/Witty', 'Curious/Surprising', 'Authentic/Relatable', 'Authoritative/Insightful'],
 };
 
+export const PLATFORM_FORMATS: Record<Platform, string[]> = {
+  [Platform.INSTAGRAM]: ['Reel', 'Carousel', 'Static Post', 'Story'],
+  [Platform.TIKTOK]: ['Vlog', 'Green Screen', 'Skit', 'Photo Mode'],
+  [Platform.YOUTUBE]: ['Shorts', 'Long-form'],
+  [Platform.LINKEDIN]: ['Text Only', 'PDF/Carousel', 'Article', 'Video'],
+  [Platform.TWITTER]: ['Thread', 'Short Tweet', 'Media Post'],
+  [Platform.FACEBOOK]: ['Video', 'Image Post', 'Text Post'],
+};
+
+export const REFINE_PLATFORM_FORMATS: Record<Platform, string[]> = {
+  [Platform.INSTAGRAM]: ['Reel', 'Carousel', 'Caption Only'],
+  [Platform.TIKTOK]: ['Script', 'Caption', 'Overlay Text'],
+  [Platform.YOUTUBE]: ['Description', 'Shorts Script', 'Community Post'],
+  [Platform.LINKEDIN]: ['Post', 'Article', 'PDF Slide Text'],
+  [Platform.TWITTER]: ['Thread', 'Tweet'],
+  [Platform.FACEBOOK]: ['Post', 'Video Description'],
+};
+
+
 export const TIMING_DATA: Record<Platform, { 
   bestTimeIST: string, 
   gapTimeIST: string,
@@ -91,9 +110,6 @@ export const MODE_PROMPTS = {
   GENERATION: (platform: Platform, goals: string[], tones: string[], format: string, targeting: string, keywords: string) => {
     
     if (platform === Platform.INSTAGRAM) {
-      const isReel = format.toLowerCase().includes('reel') || format.toLowerCase().includes('video');
-      const cta = isReel ? "Send this to a friend who needs..." : "Save this for later";
-
       return `
       ROLE: Veer SEO Instagram Architect (2025 Edition, "Adam Mosseri" Protocol)
       ACTIVE MODE: CREATE (Generation) - INSTAGRAM FOCUS
@@ -101,17 +117,17 @@ export const MODE_PROMPTS = {
       Format: ${format}
 
       **CRITICAL INSTRUCTION: SIMPLIFIED OUTPUT - "SOCIAL SEO" FORMULA**
-      Your ONLY task is to generate a single, complete, and ready-to-paste caption block.
+      Your ONLY task is to generate a single, complete, and ready-to-paste caption block that includes a headline, body, CTA, and hashtags. Weave the keywords into the text.
       
       **EXECUTION STEPS:**
-      1.  **SEO Hook (First 125 chars):** Create a hook that includes the Primary Keyword.
-      2.  **Body:** Write a natural-language body, weaving in secondary keywords. ${isReel ? "Keep it short; the value is in the video." : "Make it longer for 'micro-blogging' to increase Time Spent."}
-      3.  **Call to Action (CTA):** Use the ranking signal CTA: "${cta}".
-      4.  **Keyword Hashtags:** Generate 3-5 highly specific hashtags that match the keywords in the hook.
-      5.  **Assemble:** Combine all parts into a single text block, with hashtags at the very end.
-      6.  **Output:** Place this single, complete caption block into the 'strategy.caption' field of the JSON.
-      7.  **Scoring:** Calculate 'baselineScore' and 'score' as integers from 0-100 and place them in the 'virality' object.
-      8.  **Fill Other Fields:** Populate other required JSON fields with brief, relevant analysis.
+      1.  **SEO Hook:** Create a hook containing the Primary Keyword.
+      2.  **Body & Keywords:** Write a natural-language body, weaving in secondary keywords.
+      3.  **CTA:** Use a "Send to a friend" or "Save this" CTA.
+      4.  **Hashtags:** Generate 3-5 specific hashtags.
+      5.  **Assemble:** Combine all parts into ONE text block for the 'strategy.caption' field.
+      6.  **Scoring:** Provide 'baselineScore' and 'score' (0-100 integers) in the 'virality' object.
+
+      **FINAL CHECK:** Ensure the 'strategy.caption' field contains the complete, unified text block.
       `;
     }
 
@@ -200,118 +216,9 @@ export const MODE_PROMPTS = {
   
   REFINE: (originalText: string, keywords: string, targeting: string, platform: Platform, format: string, tones: string[]) => {
     const tonesInstruction = tones.length > 0 ? `\n**Desired Tones:** You must rewrite the content to reflect these tones: ${tones.join(', ')}.` : '';
-
-    if (platform === Platform.INSTAGRAM) {
-      return `
-      MODE B: REFINE (Instagram "Mosseri" Auditor).
-      Target Platform: Instagram.
-      Original Draft: "${originalText}"
-      
-      **TASK:** Perform a 2025 Mosseri Audit and generate a structured JSON rewrite.
-      
-      **INSTAGRAM RULES:**
-      1.  **SEO Hook:** Does the hook (first 125 chars) contain a primary keyword? If not, rewrite it.
-      2.  **CTA Signal:** Is the CTA a passive "Like"? Change it to a "Send this to..." (Reels) or "Save this..." (Feed) CTA.
-      3.  **Hashtag Spam:** Are there more than 5 hashtags? Reduce to 3-5 specific ones.
-      
-      **CRITICAL OUTPUT SCHEMA:**
-      Populate BOTH 'refineData' AND 'virality' objects.
-      
-      1. **'refineData' object**:
-         - 'audit.score' [INTEGER]: 0-100 rating of the original.
-         - 'audit.flaw' [String]: The #1 ranking mistake found (e.g., "Weak CTA, no keyword in hook").
-         - 'audit.fix' [String]: The specific Mosseri-aligned fix applied.
-         - 'audit.explanation' [String]: Why this works for the 2025 algorithm.
-         - 'refinedContent.headline' [String]: The new "SEO Hook".
-         - 'refinedContent.body' [String]: The refined, humanized body.
-         - 'refinedContent.cta' [String]: The new ranking-signal CTA.
-         - 'refinedContent.hashtags' [Array of Strings]: 3-5 optimized hashtags.
-      
-      2. **'virality' object**:
-         - 'baselineScore' [INTEGER]: Match 'audit.score'.
-         - 'score' [INTEGER]: New score for the refined version.
-         - 'gapAnalysis' [String]: Brief explanation of the score increase.
-
-      **FINAL CHECK:** Ensure every field is populated.
-      `;
-    }
-
-    if (platform === Platform.YOUTUBE) {
-      return `
-      MODE B: REFINE (The YouTube "MrBeast" Auditor).
-      Target Platform: YouTube.
-      Original Draft: "${originalText}"
-      Context/Keywords: ${keywords}
-      
-      **TASK:** Perform a 2025 Retention & CTR Audit and generate a structured JSON rewrite.
-      
-      **YOUTUBE RULES:**
-      1.  **The Hook (0-3s):** Fail any intro that doesn't deliver the promise immediately.
-      2.  **The Title:** A descriptive title is a failure. It must be intriguing.
-      3.  **The Pacing:** Cut all fluff (e.g., early "subscribe" requests).
-      
-      **CRITICAL OUTPUT SCHEMA:**
-      You MUST populate BOTH the 'refineData' AND the 'virality' objects.
-      
-      1. **'refineData' object**:
-         - 'audit.score' [INTEGER]: 0-100 rating of the original draft.
-         - 'audit.flaw' [String]: The biggest retention-killer found.
-         - 'audit.fix' [String]: The specific CTR/retention solution you applied.
-         - 'audit.explanation' [String]: Why this fix works for the Shorts algorithm.
-         - 'refinedContent.headline' [String]: The new, click-worthy Optimized Title.
-         - 'refinedContent.body' [String]: The refined, fast-paced script/description.
-         - 'refinedContent.cta' [String]: A clear Call-To-Action.
-         - 'refinedContent.hashtags' [Array of Strings]: 3-5 hashtags including "Shorts".
-         - 'refinedContent.videoTags' [Array of Strings]: 10-15 tags using the Pyramid Strategy.
-
-      2. **'virality' object**:
-         - 'baselineScore' [INTEGER]: Same as 'refineData.audit.score'.
-         - 'score' [INTEGER]: Your new score for the refined content.
-         - 'gapAnalysis' [String]: One sentence explaining the score improvement.
-
-      **FINAL CHECK:** Ensure every field is populated. No placeholders.
-      `;
-    }
-
-    if (platform === Platform.LINKEDIN) {
-      return `
-      MODE B: REFINE (LinkedIn "Top Voice" Editor).
-      Target Platform: LinkedIn.
-      Original Draft: "${originalText}"
-      Context/Keywords: ${keywords}
-      ${tonesInstruction}
-      
-      **TASK:** Perform a 2025 "Knowledge Graph" Audit and generate a structured JSON rewrite.
-      
-      **LINKEDIN RULES:**
-      1.  **CRITICAL LINK PROTOCOL:** If you detect a URL in the main body, you MUST remove it from 'refinedContent.body' and state this action in 'audit.fix'.
-      2.  **DWELL TIME MAXIMIZATION:** Fix "Walls of Text." Rewrite the body with short paragraphs (1-2 sentences) for mobile readability.
-      3.  **COMMENT VELOCITY:** The 'cta' MUST be a specific, open-ended "Conversation Starter" question to trigger long comments.
-      
-      **CRITICAL OUTPUT SCHEMA:**
-      You MUST populate BOTH the 'refineData' AND the 'virality' objects.
-      
-      1. **'refineData' object**:
-         - 'audit.score' [INTEGER]: 0-100 rating of the original.
-         - 'audit.flaw' [String]: The #1 reason this post would fail (e.g., "External link in body").
-         - 'audit.fix' [String]: The specific action taken (e.g., "Removed link and advised moving to comments").
-         - 'audit.explanation' [String]: Why this avoids the 25-40% reach penalty.
-         - 'refinedContent.headline' [String]: A strong, professional hook.
-         - 'refinedContent.body' [String]: The rewritten, mobile-friendly post.
-         - 'refinedContent.cta' [String]: The new "Conversation Starter".
-         - 'refinedContent.hashtags' [Array of Strings]: 3-5 broad, professional hashtags.
-      
-      2. **'virality' object**:
-         - 'baselineScore' [INTEGER]: Must match 'audit.score'.
-         - 'score' [INTEGER]: New score for the refined version.
-         - 'gapAnalysis' [String]: Brief explanation of the score increase.
-
-      **FINAL SYSTEM CHECK (NON-NEGOTIABLE):** Your response is a FAILURE if any field is empty or contains placeholders like "[Your generated hashtags]". You must go back and fill them with real, specific content.
-      `;
-    }
-
+    
     return `
-    MODE B: REFINE (The Editor).
+    MODE B: REFINE (The Omni-Platform Editor).
     Target Platform: ${platform}.
     Original Draft: "${originalText}"
     Context/Keywords: ${keywords}
@@ -319,10 +226,17 @@ export const MODE_PROMPTS = {
     
     **TASK:** Perform a 2025 Algorithm Audit and generate a structured JSON rewrite. This is a deep reasoning task.
 
+    **CRITICAL PROTOCOL: AUDIT-FIRST.**
+    1. Analyze the original text for platform-specific "reach killers".
+    2. Define the flaw and the fix.
+    3. Then, rewrite the content.
+    4. Finally, generate the SEO scores.
+
     **PLATFORM RULES:**
-    - **LinkedIn:** Remove links from body. Fix wall-of-text formatting. Add a "Conversation Starter" question.
-    - **Instagram:** Change "Like" CTAs to "Share/Save" CTAs. Add keywords to caption.
-    - **Twitter/X:** Make hooks polarizing. Shorten sentences.
+    - **LinkedIn:** Fix "Walls of Text" by adding whitespace. If a URL is in the body, REMOVE it from the refined text and note this in the audit. The CTA must be a "Conversation Starter" question.
+    - **Instagram:** Change "Like" CTAs to "Share/Save". Ensure the hook contains a primary keyword.
+    - **YouTube:** Fix slow intros and boring titles. The CTA should encourage session time (e.g., "Watch next...").
+    - **Twitter/X:** Make hooks more polarizing to trigger replies. Break long text into threads.
     
     **CRITICAL OUTPUT SCHEMA:**
     You MUST populate BOTH the 'refineData' AND the 'virality' objects in the JSON response.
@@ -332,65 +246,22 @@ export const MODE_PROMPTS = {
        - 'audit.flaw' [String]: The single biggest reach-killing mistake in the draft.
        - 'audit.fix' [String]: The specific 2025 algorithmic solution you applied.
        - 'audit.explanation' [String]: Why this fix works for this platform's algorithm.
-       - 'refinedContent.headline' [String]: A new scroll-stopping hook.
-       - 'refinedContent.body' [String]: The completely rewritten post. Humanized, sensory language. NO LINKS in body for LinkedIn.
+       - 'refinedContent.headline' [String]: A new scroll-stopping hook or title.
+       - 'refinedContent.body' [String]: The completely rewritten post body.
        - 'refinedContent.cta' [String]: A specific platform-native Call-To-Action.
        - 'refinedContent.hashtags' [Array of Strings]: An array of 3-5 highly relevant hashtags (do not include the # symbol).
+       - 'refinedContent.videoTags' [Array of Strings, YouTube only]: 10-15 tags.
     
     2. **'virality' object**:
        - 'baselineScore' [INTEGER]: MUST be the same value as 'refineData.audit.score'.
        - 'score' [INTEGER]: MUST be your new, calculated score for the *refined* content.
        - 'gapAnalysis' [String]: A brief, one-sentence explanation of why the score improved.
 
-    **FINAL CHECK (NON-NEGOTIABLE):** Before finalizing your response, you MUST verify that every field in the 'refineData' object is fully populated with specific, relevant content, NOT placeholders like "[Your generated hashtags]". If any field is empty or contains placeholder text, your response is a FAILURE and you must correct it.
+    **FINAL SYSTEM CHECK (NON-NEGOTIABLE):** Your response is a FAILURE if any field is empty or contains placeholders like "[Your generated hashtags]". You must go back and fill them with real, specific content.
     `;
   },
 
   COMPETITOR_SPY: (platform: Platform, count: number, captions: string, targeting: string) => {
-    
-    if (platform === Platform.INSTAGRAM) {
-      return `
-      MODE C: COMPETITOR SPY (Instagram "Mosseri" Deconstructor).
-      INPUT: Analyzing competitor content. Context: "${captions}"
-      
-      **TASK:** Reverse-engineer the competitor's success based on the 2025 algorithm.
-      
-      **EXECUTION STEPS:**
-      1.  Identify the **Share Trigger**: Why would a user DM this to a friend? (e.g., Identity Validation, High Utility, Relatable Humor).
-      2.  Extract Multimodal SEO: List the **Spoken Keywords** and **On-Screen Text Keywords**.
-      3.  Synthesize into an actionable takeaway.
-      
-      **OUTPUT SCHEMA (Strict JSON String):**
-      Populate 'spyReport' array. Each object must have:
-      - 'analysis': [String] The specific Share Trigger identified.
-      - 'keywords': [String] Spoken & On-Screen keywords detected.
-      - 'strategy': [String] The primary ranking signal they targeted (e.g., "Watch Time > 100%").
-      - 'learning': [String] An actionable tip for the user.
-      `;
-    }
-
-    if (platform === Platform.YOUTUBE) {
-      return `
-      MODE C: COMPETITOR SPY (YouTube Shorts Analyst).
-      INPUT: Analyzing competitor video. Context: "${captions}"
-      
-      **TASK:** Reverse-engineer the competitor's YouTube Shorts success.
-      
-      **EXECUTION STEPS:**
-      1.  Identify the **Retention Hack** (e.g., seamless loop, fast cuts, curiosity gap).
-      2.  Extract Multimodal SEO: **Spoken Keywords** and **On-Screen Text Keywords**.
-      3.  Determine the **"Pyramid Strategy"** they likely used for their hidden video tags.
-      4.  Synthesize into an actionable takeaway.
-      
-      **OUTPUT SCHEMA (Strict JSON String):**
-      Populate 'spyReport' array. Each object must have:
-      - 'analysis': [String] The specific Retention Hack identified.
-      - 'keywords': [String] Spoken & On-Screen keywords detected.
-      - 'strategy': [String] The inferred Tagging & Hashtag strategy.
-      - 'learning': [String] An actionable tip for the user's own Shorts.
-      `;
-    }
-
     return `
     MODE C: COMPETITOR SPY.
     PLATFORM: ${platform}

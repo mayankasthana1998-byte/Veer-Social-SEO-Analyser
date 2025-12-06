@@ -9,6 +9,7 @@ import CreateView from './components/views/CreateView';
 import RefineView from './components/views/RefineView';
 import SpyView from './components/views/SpyView';
 import HuntView from './components/views/HuntView';
+import { PLATFORM_FORMATS, REFINE_PLATFORM_FORMATS } from './constants';
 
 import { Sparkles, BrainCircuit, Loader2, Settings2, Flame, Search, BookOpen, ArrowUpRight } from 'lucide-react';
 
@@ -134,7 +135,6 @@ const App: React.FC = () => {
 
     try {
       const filesToAnalyze = files.map(f => f.file);
-      // FIX: API key is handled by geminiService via environment variables.
       const data = await analyzeContent(filesToAnalyze, mode, platform, config);
       
       if (mode === AppMode.TREND_HUNTER) {
@@ -147,7 +147,6 @@ const App: React.FC = () => {
         addToHistory(mode, analysis, platform);
       }
     } catch (err: any) {
-      // FIX: Simplify error handling per guidelines.
       setError("Oops! The AI got confused. Please check your API Key and try again.");
     } finally {
       clearInterval(updateInterval);
@@ -176,6 +175,12 @@ const App: React.FC = () => {
   
   const handleSetPlatform = (p: Platform) => {
     setPlatform(p);
+    setConfig(prev => ({
+      ...prev,
+      contentFormat: PLATFORM_FORMATS[p][0],
+      refineFormat: REFINE_PLATFORM_FORMATS[p][0],
+      tone: [], // Also reset tones when platform changes
+    }));
   };
 
   const ModeTab = ({ m, label, icon: Icon }: { m: AppMode, label: string, icon: any }) => (
@@ -220,7 +225,6 @@ const App: React.FC = () => {
                  <BookOpen className="w-4 h-4" />
                  <span className="text-xs font-bold hidden sm:block">ACADEMY</span>
               </button>
-              {/* FIX: Removed API key logic and disconnect button, replaced with static indicator */}
               <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-900 rounded-full text-slate-400">
                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                  <span className="text-xs font-bold hidden sm:block">SYSTEM ONLINE</span>
@@ -242,7 +246,7 @@ const App: React.FC = () => {
            {mode === AppMode.GENERATION && (
              <CreateView 
                 platform={platform} 
-                setPlatform={handleSetPlatform} 
+                handleSetPlatform={handleSetPlatform} 
                 config={config} 
                 setConfig={setConfig} 
                 files={files} 
@@ -257,7 +261,7 @@ const App: React.FC = () => {
                 config={config} 
                 setConfig={setConfig} 
                 platform={platform} 
-                setPlatform={handleSetPlatform} 
+                handleSetPlatform={handleSetPlatform} 
              />
            )}
            {mode === AppMode.COMPETITOR_SPY && (
@@ -266,12 +270,15 @@ const App: React.FC = () => {
                 config={config} setConfig={setConfig} 
                 isAnalyzing={isAnalyzing}
                 platform={platform}
+                // FIX: Changed prop name from handleSetPlatform to setPlatform to match SpyViewProps
                 setPlatform={handleSetPlatform}
              />
            )}
            {mode === AppMode.TREND_HUNTER && (
              <HuntView 
-                platform={platform} setPlatform={handleSetPlatform}
+                platform={platform}
+                // FIX: Changed prop name from handleSetPlatform to setPlatform to match HuntViewProps
+                setPlatform={handleSetPlatform}
                 config={config} setConfig={setConfig}
                 trendResults={trendResults}
                 handleUseTrend={handleUseTrend}

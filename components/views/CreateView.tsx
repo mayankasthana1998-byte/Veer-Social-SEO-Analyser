@@ -1,15 +1,15 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { 
   Instagram, Linkedin, Youtube, Music2, Twitter, Facebook, 
   Target, ShieldCheck, Sliders, Sparkles
 } from 'lucide-react';
 import { Platform, FileInput } from '../../types';
 import FileUpload from '../FileUpload';
-import { TONE_OPTIONS } from '../../constants';
+import { TONE_OPTIONS, PLATFORM_FORMATS } from '../../constants';
 
 interface CreateViewProps {
   platform: Platform;
-  setPlatform: (p: Platform) => void;
+  handleSetPlatform: (p: Platform) => void;
   config: any;
   setConfig: (c: any) => void;
   files: FileInput[];
@@ -21,29 +21,11 @@ interface CreateViewProps {
 
 const GOAL_OPTIONS = ['Viral Reach', 'Saves', 'Shares', 'Comments', 'Clicks', 'Sales'];
 
-const PLATFORM_FORMATS: Record<Platform, string[]> = {
-  [Platform.INSTAGRAM]: ['Reel', 'Carousel', 'Static Post', 'Story'],
-  [Platform.TIKTOK]: ['Vlog', 'Green Screen', 'Skit', 'Photo Mode'],
-  [Platform.YOUTUBE]: ['Shorts', 'Long-form'],
-  [Platform.LINKEDIN]: ['Text Only', 'PDF/Carousel', 'Article', 'Video'],
-  [Platform.TWITTER]: ['Thread', 'Short Tweet', 'Media Post'],
-  [Platform.FACEBOOK]: ['Video', 'Image Post', 'Text Post'],
-};
-
 const CreateView: React.FC<CreateViewProps> = ({ 
-  platform, setPlatform: handleSetPlatform, config, setConfig, files, setFiles, brandFiles, setBrandFiles, isAnalyzing 
+  platform, handleSetPlatform, config, setConfig, files, setFiles, brandFiles, setBrandFiles, isAnalyzing 
 }) => {
 
   const availableTones = TONE_OPTIONS[platform] || TONE_OPTIONS.default;
-
-  // Reset Format when Platform changes
-  useEffect(() => {
-    setConfig((prev: any) => ({
-       ...prev,
-       contentFormat: PLATFORM_FORMATS[platform][0],
-       tone: [], // Also reset tones when platform changes
-    }));
-  }, [platform, setConfig]);
 
   const toggleSelection = (field: 'tone' | 'engagementGoal', value: string) => {
     const current = config[field];

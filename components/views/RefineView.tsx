@@ -1,36 +1,18 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Settings2, Instagram, Music2, Youtube, Linkedin, Twitter, Facebook } from 'lucide-react';
 import { Platform } from '../../types';
-import { TONE_OPTIONS } from '../../constants';
+import { TONE_OPTIONS, REFINE_PLATFORM_FORMATS } from '../../constants';
 
 interface RefineViewProps {
   config: any;
   setConfig: (c: any) => void;
   platform: Platform;
-  setPlatform: (p: Platform) => void;
+  handleSetPlatform: (p: Platform) => void;
 }
 
-const PLATFORM_FORMATS: Record<Platform, string[]> = {
-  [Platform.INSTAGRAM]: ['Reel', 'Carousel', 'Caption Only'],
-  [Platform.TIKTOK]: ['Script', 'Caption', 'Overlay Text'],
-  [Platform.YOUTUBE]: ['Description', 'Shorts Script', 'Community Post'],
-  [Platform.LINKEDIN]: ['Post', 'Article', 'PDF Slide Text'],
-  [Platform.TWITTER]: ['Thread', 'Tweet'],
-  [Platform.FACEBOOK]: ['Post', 'Video Description'],
-};
-
-const RefineView: React.FC<RefineViewProps> = ({ config, setConfig, platform, setPlatform: handleSetPlatform }) => {
+const RefineView: React.FC<RefineViewProps> = ({ config, setConfig, platform, handleSetPlatform }) => {
 
   const availableTones = TONE_OPTIONS[platform] || TONE_OPTIONS.default;
-
-  // Reset Format when Platform changes
-  useEffect(() => {
-    setConfig((prev: any) => ({
-       ...prev,
-       refineFormat: PLATFORM_FORMATS[platform]?.[0] || 'Post',
-       tone: [], // Also reset tones when platform changes
-    }));
-  }, [platform]);
 
   const toggleSelection = (field: 'tone' | 'engagementGoal', value: string) => {
     const current = config[field];
@@ -110,7 +92,7 @@ const RefineView: React.FC<RefineViewProps> = ({ config, setConfig, platform, se
               onChange={(e) => setConfig({...config, refineFormat: e.target.value})}
               className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-xl p-3 outline-none focus:border-pink-500 transition-colors"
             >
-              {PLATFORM_FORMATS[platform]?.map((fmt) => (
+              {REFINE_PLATFORM_FORMATS[platform]?.map((fmt) => (
                  <option key={fmt} value={fmt}>{fmt}</option>
               ))}
             </select>
