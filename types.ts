@@ -39,7 +39,7 @@ export interface OptimizationIdea {
   idea: string;
 }
 
-// NEW: Dedicated Structure for Refine Mode for type safety and UI stability
+// Dedicated Structure for Refine Mode for type safety and UI stability
 export interface RefineData {
   audit: {
     score: number;
@@ -74,7 +74,7 @@ export interface AnalysisResult {
   };
   strategy?: {
     headline: string;
-    caption: string; // Used for GENERATION and Instagram Create Markdown
+    caption: string; 
     cta: string;
   };
   seo?: {
@@ -88,15 +88,11 @@ export interface AnalysisResult {
 
   // Mode C: Spy Data
   competitorInsights?: {
-    visualTheme?: string;
-    ctaStrategy?: string;
-    formula?: string;
     spyReport?: SpyReportRow[];
   };
   
   optimizationIdeas?: OptimizationIdea[];
 
-  // Add grounding metadata for search results
   groundingMetadata?: {
     groundingChunks: { web: { uri: string; title: string } }[];
   };

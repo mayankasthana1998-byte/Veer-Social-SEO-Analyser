@@ -107,7 +107,6 @@ export const analyzeContent = async (
   config: any
 ): Promise<AnalysisResult | TrendItem[]> => {
   try {
-    // FIX: Per Gemini guidelines, API key must be sourced from environment variables directly.
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const currentDate = new Date().toLocaleString('default', { month: 'long', 'year': 'numeric' });
 
@@ -118,9 +117,15 @@ export const analyzeContent = async (
 
     let promptText = "";
     
-    // Use the faster model for all modes to ensure a responsive UI.
-    const modelName = 'gemini-2.5-flash';
+    // Default model is the fast one.
+    let modelName = 'gemini-2.5-flash';
     const generateConfig: any = { systemInstruction: SYSTEM_INSTRUCTION };
+
+    // **PERFORMANCE FIX**: Use the faster model for Refine mode. The prompts are now strong enough
+    // that we don't need the slower "thinking" model.
+    if (mode === AppMode.REFINE) {
+        modelName = 'gemini-2.5-flash';
+    }
 
     if (mode === AppMode.TREND_HUNTER) {
       promptText = MODE_PROMPTS.TREND_HUNTER(config.niche, platform, currentDate);
@@ -218,7 +223,6 @@ export const analyzeContent = async (
         } else if (Array.isArray(parsed)) {
           result.competitorInsights = { spyReport: parsed };
         }
-        // FIX: Attach grounding metadata as per Gemini guidelines
         if (response.candidates?.[0]?.groundingMetadata) {
             result.groundingMetadata = response.candidates[0].groundingMetadata as any;
         }

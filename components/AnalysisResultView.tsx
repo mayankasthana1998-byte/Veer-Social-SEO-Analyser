@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { AnalysisResult, AppMode, Platform, SpyReportRow } from '../types';
-import { Copy, TrendingUp, BarChart3, FileText, BrainCircuit, Check, Youtube, FileVideo, Hash, Tag, Search } from 'lucide-react';
+import { Copy, TrendingUp, BarChart3, FileText, BrainCircuit, Check, Youtube, Hash, Tag, Search } from 'lucide-react';
 import PlatformSpecificResultView from './PlatformSpecificResultView';
 
 interface AnalysisResultViewProps {
@@ -78,8 +78,12 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, p
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (result) {
+        containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }, [result]);
+
+  if (!result) return null;
 
   // RENDER PATH 1: SPY MODE
   if (mode === AppMode.COMPETITOR_SPY && result.competitorInsights?.spyReport) {
@@ -119,7 +123,6 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, p
             </div>
         </div>
         
-        {/* FIX: Display grounding metadata as per Gemini guidelines */}
         {result.groundingMetadata && result.groundingMetadata.groundingChunks?.length > 0 && (
           <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-[2rem] backdrop-blur-md">
             <div className="flex items-center gap-3 mb-4">
@@ -144,7 +147,7 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, p
   }
 
   // RENDER PATH 2: REFINE MODE (Structured JSON)
-  if (mode === AppMode.REFINE && result.refineData && result.virality) {
+  if (mode === AppMode.REFINE && result.refineData) {
     return (
       <div ref={containerRef}>
          <OptimizationDeltaCard result={result} />
@@ -192,7 +195,6 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, p
                 </div>
             </div>
             <div className="space-y-4">
-                {/* Title */}
                 <div className="bg-black/30 p-4 rounded-xl border border-white/5">
                     <div className="flex justify-between items-center">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Optimized Title</label>
@@ -200,7 +202,6 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, p
                     </div>
                     <p className="text-white font-bold text-lg mt-2">{result.strategy.headline}</p>
                 </div>
-                {/* Description */}
                 <div className="bg-black/30 p-4 rounded-xl border border-white/5">
                     <div className="flex justify-between items-center">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Optimized Description</label>
@@ -208,7 +209,6 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, p
                     </div>
                     <p className="text-slate-300 whitespace-pre-wrap text-sm mt-2 font-mono leading-relaxed">{description}</p>
                 </div>
-                {/* Hashtags */}
                 {hashtagsString && (
                   <div className="bg-black/30 p-4 rounded-xl border border-white/5">
                       <div className="flex justify-between items-center">
@@ -218,7 +218,6 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, p
                       <p className="text-indigo-300 whitespace-pre-wrap text-xs mt-2 font-mono leading-relaxed">{hashtagsString}</p>
                   </div>
                 )}
-                {/* Video Tags */}
                 {videoTagsString && (
                   <div className="bg-black/30 p-4 rounded-xl border border-white/5">
                       <div className="flex justify-between items-center">
@@ -234,7 +233,7 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, p
     );
   }
   
-  // RENDER PATH 5: DEFAULT BLUEPRINT VIEW (for other platforms)
+  // RENDER PATH 5: DEFAULT BLUEPRINT VIEW
   if (mode === AppMode.GENERATION && result.strategy && result.seo && result.virality) {
      const hashtagsString = result.seo.hashtags?.map(h => `#${h}`).join(' ') || '';
      const fullReportText = `${result.strategy.headline}\n\n${result.strategy.caption}\n\n${result.strategy.cta}\n\n${hashtagsString}`;
@@ -265,7 +264,7 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, p
                </div>
                <div>
                  <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-3 block">Hashtags</span>
-                 <p className="text-indigo-400 text-sm font-medium leading-relaxed mt-2">{result.seo.hashtags?.map(h => `#${h}`).join(' ')}</p>
+                 <p className="text-indigo-400 text-sm font-medium leading-relaxed mt-2">{hashtagsString}</p>
                </div>
             </div>
           </div>
@@ -274,7 +273,7 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, p
     );
   }
   
-  return null; // Fallback empty state
+  return null; 
 };
 
 export default AnalysisResultView;

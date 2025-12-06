@@ -26,11 +26,12 @@ const PlatformSpecificResultView: React.FC<Props> = ({ data, platform }) => {
 
   const handleCopy = () => {
     let fullPost = '';
+    const hashtags = refinedContent.hashtags.map(h => `#${h.replace('#', '')}`).join(' ');
+
     if (platform === Platform.YOUTUBE) {
-      // For YouTube, Title and Description are separate fields
-      fullPost = `Title: ${refinedContent.headline}\n\nDescription:\n${refinedContent.body}\n\n${refinedContent.cta}`;
+      const videoTags = refinedContent.videoTags?.join(', ') || '';
+      fullPost = `Title: ${refinedContent.headline}\n\nDescription:\n${refinedContent.body}\n\n${refinedContent.cta}\n\nHashtags: ${hashtags}\n\nVideo Tags: ${videoTags}`;
     } else {
-      const hashtags = refinedContent.hashtags.map(h => `#${h.replace('#', '')}`).join(' ');
       fullPost = `${refinedContent.headline}\n\n${refinedContent.body}\n\n${refinedContent.cta}\n\n${hashtags}`;
     }
     navigator.clipboard.writeText(fullPost);
@@ -42,6 +43,7 @@ const PlatformSpecificResultView: React.FC<Props> = ({ data, platform }) => {
       
       {/* AUDIT CARD */}
       <div className="bg-slate-900/80 border border-red-500/20 rounded-[2rem] p-8 backdrop-blur-xl relative">
+         <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl -z-10"></div>
          <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-red-500/10 rounded-lg"><AlertTriangle className="w-5 h-5 text-red-400" /></div>
             <h3 className="text-sm font-black text-red-100 uppercase tracking-widest">CRITICAL AUDIT</h3>

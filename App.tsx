@@ -270,14 +270,12 @@ const App: React.FC = () => {
                 config={config} setConfig={setConfig} 
                 isAnalyzing={isAnalyzing}
                 platform={platform}
-                // FIX: Changed prop name from handleSetPlatform to setPlatform to match SpyViewProps
                 setPlatform={handleSetPlatform}
              />
            )}
            {mode === AppMode.TREND_HUNTER && (
              <HuntView 
                 platform={platform}
-                // FIX: Changed prop name from handleSetPlatform to setPlatform to match HuntViewProps
                 setPlatform={handleSetPlatform}
                 config={config} setConfig={setConfig}
                 trendResults={trendResults}
