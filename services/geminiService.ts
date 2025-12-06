@@ -117,15 +117,8 @@ export const analyzeContent = async (
 
     let promptText = "";
     
-    // Default model is the fast one.
     let modelName = 'gemini-2.5-flash';
     const generateConfig: any = { systemInstruction: SYSTEM_INSTRUCTION };
-
-    // **PERFORMANCE FIX**: Use the faster model for Refine mode. The prompts are now strong enough
-    // that we don't need the slower "thinking" model.
-    if (mode === AppMode.REFINE) {
-        modelName = 'gemini-2.5-flash';
-    }
 
     if (mode === AppMode.TREND_HUNTER) {
       promptText = MODE_PROMPTS.TREND_HUNTER(config.niche, platform, currentDate);
@@ -165,7 +158,6 @@ export const analyzeContent = async (
       }
     }
     
-    // CONFIGURE TOOLS & RESPONSE SCHEMA
     if (mode === AppMode.TREND_HUNTER || mode === AppMode.COMPETITOR_SPY) {
       generateConfig.tools = [{ googleSearch: {} }];
     } else {

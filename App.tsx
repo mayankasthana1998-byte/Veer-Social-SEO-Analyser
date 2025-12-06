@@ -11,7 +11,7 @@ import SpyView from './components/views/SpyView';
 import HuntView from './components/views/HuntView';
 import { PLATFORM_FORMATS, REFINE_PLATFORM_FORMATS } from './constants';
 
-import { Sparkles, BrainCircuit, Loader2, Settings2, Flame, Search, BookOpen, ArrowUpRight } from 'lucide-react';
+import { Sparkles, BrainCircuit, Loader2, Settings2, Flame, Search, BookOpen, ArrowUpRight, Bug } from 'lucide-react';
 
 const App: React.FC = () => {
   const [mode, setMode] = useState<AppMode>(AppMode.GENERATION);
@@ -127,7 +127,7 @@ const App: React.FC = () => {
     const updateInterval = setInterval(() => {
       const elapsed = (Date.now() - startTime) / 1000;
       if (mode === AppMode.REFINE) {
-        setLoadingMessage(`Performing Deep Analysis (this may take a moment)... ${elapsed.toFixed(1)}s`);
+        setLoadingMessage(`Performing Deep Analysis... ${elapsed.toFixed(1)}s`);
       } else {
         setLoadingMessage(`Processing... ${elapsed.toFixed(1)}s`);
       }
@@ -175,12 +175,13 @@ const App: React.FC = () => {
   
   const handleSetPlatform = (p: Platform) => {
     setPlatform(p);
-    setConfig(prev => ({
-      ...prev,
-      contentFormat: PLATFORM_FORMATS[p][0],
-      refineFormat: REFINE_PLATFORM_FORMATS[p][0],
-      tone: [], // Also reset tones when platform changes
-    }));
+    setConfig(prev => {
+        const newConfig = {...prev};
+        newConfig.contentFormat = PLATFORM_FORMATS[p][0];
+        newConfig.refineFormat = REFINE_PLATFORM_FORMATS[p][0];
+        newConfig.tone = []; // Reset tones when platform changes
+        return newConfig;
+    });
   };
 
   const ModeTab = ({ m, label, icon: Icon }: { m: AppMode, label: string, icon: any }) => (
@@ -336,7 +337,12 @@ const App: React.FC = () => {
       {showMasterclass && <MasterclassGuide onClose={() => setShowMasterclass(false)} />}
       <GlobalSearch isOpen={showSearch} onClose={() => setShowSearch(false)} history={history} onSelect={restoreFromHistory} onDelete={deleteFromHistory} onClear={clearHistory} />
       
-      <footer className="fixed bottom-4 left-0 w-full text-center pointer-events-none">
+      <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-slate-900/60 border border-yellow-500/20 rounded-full text-xs text-yellow-400 backdrop-blur-md">
+        <Bug className="w-3 h-3" />
+        <p>Facing issues? A quick <button onClick={() => window.location.reload()} className="font-bold underline hover:text-white">refresh</button> often helps us squash bugs!</p>
+      </div>
+      
+      <footer className="fixed bottom-4 left-4 w-auto text-center pointer-events-none">
          <p className="text-[10px] text-slate-800 font-mono">System v20.0 (Full Sync)</p>
       </footer>
     </div>
