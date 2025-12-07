@@ -10,10 +10,10 @@ interface SpyViewProps {
   setConfig: (c: any) => void;
   isAnalyzing: boolean;
   platform: Platform;
-  setPlatform: (p: Platform) => void;
+  handleSetPlatform: (p: Platform) => void;
 }
 
-const SpyView: React.FC<SpyViewProps> = ({ files, setFiles, config, setConfig, isAnalyzing, platform, setPlatform: handleSetPlatform }) => {
+const SpyView: React.FC<SpyViewProps> = ({ files, setFiles, config, setConfig, isAnalyzing, platform, handleSetPlatform }) => {
   
   const getPlatformStyle = (p: Platform, isSelected: boolean) => {
     if (!isSelected) return 'bg-slate-900/40 border-slate-800 text-slate-500 hover:bg-slate-800 hover:text-white';
@@ -36,7 +36,7 @@ const SpyView: React.FC<SpyViewProps> = ({ files, setFiles, config, setConfig, i
         </div>
         <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">THE STRATEGIST</h2>
         <p className="text-slate-400 mt-2 max-w-xl mx-auto">
-          Reverse-engineer competitor content. Upload their posts and paste their captions to uncover the viral formula and ranking secrets they use.
+          Reverse-engineer competitor content. Paste their post URL to uncover the viral formula and ranking secrets they use.
         </p>
       </div>
       <div className="grid lg:grid-cols-12 gap-8">
@@ -78,11 +78,11 @@ const SpyView: React.FC<SpyViewProps> = ({ files, setFiles, config, setConfig, i
                 </div>
 
                <p className="text-sm text-slate-400 mb-4 leading-relaxed">
-                  Paste the competitor's post URL, or their exact captions. The AI will cross-reference this text with the visual patterns found in your uploaded screenshots/videos.
+                  Paste the competitor's post URL. The AI will use Search to analyze the live content. You can also optionally upload media if no URL is available.
                </p>
 
                <textarea 
-                  className="w-full h-60 bg-black/40 border border-cyan-500/30 rounded-xl p-5 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono leading-relaxed placeholder-slate-600"
+                  className="w-full h-24 bg-black/40 border border-cyan-500/30 rounded-xl p-5 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono leading-relaxed placeholder-slate-600"
                   placeholder="PASTE COMPETITOR URL OR CAPTION HERE..."
                   value={config.originalText}
                   onChange={(e) => setConfig({...config, originalText: e.target.value})}
@@ -97,15 +97,11 @@ const SpyView: React.FC<SpyViewProps> = ({ files, setFiles, config, setConfig, i
                      <Eye className="w-6 h-6 text-cyan-400" />
                   </div>
                   <div>
-                     <h2 className="text-xl font-black text-white tracking-tight">VISUAL EVIDENCE</h2>
+                     <h2 className="text-xl font-black text-white tracking-tight">VISUAL EVIDENCE (OPTIONAL)</h2>
                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Pattern Recognition</p>
                   </div>
                </div>
                
-               <p className="text-sm text-slate-400 mb-6">
-                  Upload screenshots or videos of viral posts (optional if URL is provided).
-               </p>
-
                <FileUpload files={files} setFiles={setFiles} multiple={true} isAnalyzing={isAnalyzing} />
             </div>
          </div>

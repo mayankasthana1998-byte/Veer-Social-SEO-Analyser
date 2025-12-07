@@ -179,7 +179,8 @@ const App: React.FC = () => {
         const newConfig = {...prev};
         newConfig.contentFormat = PLATFORM_FORMATS[p][0];
         newConfig.refineFormat = REFINE_PLATFORM_FORMATS[p][0];
-        newConfig.tone = []; // Reset tones when platform changes
+        // Reset tone as available tones will change
+        newConfig.tone = [];
         return newConfig;
     });
   };
@@ -271,13 +272,13 @@ const App: React.FC = () => {
                 config={config} setConfig={setConfig} 
                 isAnalyzing={isAnalyzing}
                 platform={platform}
-                setPlatform={handleSetPlatform}
+                handleSetPlatform={handleSetPlatform}
              />
            )}
            {mode === AppMode.TREND_HUNTER && (
              <HuntView 
                 platform={platform}
-                setPlatform={handleSetPlatform}
+                handleSetPlatform={handleSetPlatform}
                 config={config} setConfig={setConfig}
                 trendResults={trendResults}
                 handleUseTrend={handleUseTrend}

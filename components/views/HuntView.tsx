@@ -4,7 +4,7 @@ import { Platform, TrendItem } from '../../types';
 
 interface HuntViewProps {
   platform: Platform;
-  setPlatform: (p: Platform) => void;
+  handleSetPlatform: (p: Platform) => void;
   config: any;
   setConfig: (c: any) => void;
   trendResults: TrendItem[] | null;
@@ -14,7 +14,7 @@ interface HuntViewProps {
 }
 
 const HuntView: React.FC<HuntViewProps> = ({ 
-  platform, setPlatform: handleSetPlatform, config, setConfig, 
+  platform, handleSetPlatform, config, setConfig, 
   trendResults, handleUseTrend, handleCopyTrend, copiedTrendIndex 
 }) => {
 
