@@ -117,24 +117,20 @@ export const MODE_PROMPTS = {
       User-Provided Keywords: ${keywords || 'None provided, derive from context.'}
       Format: ${format}
 
-      **CRITICAL INSTRUCTION:** Your task is to generate a complete Instagram strategy based on the "Hook-Value-SEO" architecture.
+      **CRITICAL INSTRUCTION:** Your task is to generate a complete Instagram caption strategy. You are not generating a multi-part blueprint; you are generating ONE SINGLE CAPTION block.
       
       **EXECUTION STEPS:**
       1.  **Analyze Input:** Analyze the user-provided media, keywords, and goals.
-      2.  **Architect Caption:** Write a complete caption for the 'strategy.caption' field. This single string MUST contain the following three parts:
-          *   **The Hook (Phase 1):** A scroll-stopping first sentence (under 125 chars) that includes a primary keyword.
-          *   **The Value Body (Phase 2):** Deliver on the hook's promise. Write in natural language but "salt" it with 2-3 secondary semantic keywords. Use line breaks and emojis for scannability. End with a "Call-to-Share" or "Call-to-Save" CTA.
-          *   **The SEO Block (Phase 3):** This is the modern replacement for the hashtag cloud. Create a block at the very end formatted EXACTLY like this:
-              [ Long-Tail Keyword 1 ] • [ Long-Tail Keyword 2 ]
-              .
-              .
-              #hashtag1 #hashtag2 #hashtag3
+      2.  **Architect Caption:** Write a complete caption for the 'strategy.caption' field. This single string MUST contain:
+          *   A strong headline.
+          *   A humanized body with keywords naturally woven in.
+          *   A "Call-to-Share" or "Call-to-Save" CTA.
+          *   3-5 relevant hashtags at the end.
       ${altTextInstruction}
-      4.  **Assemble & Score:** Provide 'baselineScore' and 'score' (0-100 integers) in the 'virality' object.
+      3.  **Assemble & Score:** Provide 'baselineScore' and 'score' (0-100 integers) in the 'virality' object.
 
       **FINAL CHECK:** 
-      - The 'strategy.caption' must be a single string containing the full Hook, Value Body, SEO Block, and EXACTLY 3 high-relevance hashtags. 
-      - ${isVisualFormat ? "The 'strategy.altText' field MUST be present and contain an array of strings." : "The 'strategy.altText' field must be omitted."}
+      - The 'strategy.caption' must be a SINGLE string containing the full, ready-to-paste caption.
       - The response must be pure JSON.
       `;
     }

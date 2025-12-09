@@ -14,7 +14,7 @@ const RefineView: React.FC<RefineViewProps> = ({ config, setConfig, platform, ha
 
   const availableTones = TONE_OPTIONS[platform] || TONE_OPTIONS.default;
 
-  const toggleSelection = (field: 'tone' | 'engagementGoal', value: string) => {
+  const toggleSelection = (field: 'tone', value: string) => {
     const current = config[field];
     if (current.includes(value)) {
       setConfig({ ...config, [field]: current.filter((item: string) => item !== value) });

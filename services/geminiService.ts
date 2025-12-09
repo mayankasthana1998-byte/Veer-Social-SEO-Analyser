@@ -128,8 +128,6 @@ export const analyzeContent = async (
       if (mode === AppMode.GENERATION) {
         promptText += MODE_PROMPTS.GENERATION(platform, config.engagementGoal || [], config.tone || [], config.contentFormat || 'Standard', targeting, config.keywords || '');
       } else if (mode === AppMode.REFINE) {
-        modelName = 'gemini-3-pro-preview';
-        generateConfig.thinkingConfig = { thinkingBudget: 32768 };
         promptText += MODE_PROMPTS.REFINE(config.originalText || '', config.keywords || '', targeting, platform, config.refineFormat, config.tone || []);
       } else if (mode === AppMode.COMPETITOR_SPY) {
         promptText += MODE_PROMPTS.COMPETITOR_SPY(platform, files.length, config.originalText || 'No text', targeting);
