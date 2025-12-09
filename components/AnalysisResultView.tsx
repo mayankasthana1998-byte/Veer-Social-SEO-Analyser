@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { AnalysisResult, AppMode, Platform, SpyReportRow } from '../types';
-import { Copy, TrendingUp, BarChart3, FileText, BrainCircuit, Check, Youtube, Hash, Tag, Search } from 'lucide-react';
+import { Copy, TrendingUp, BarChart3, FileText, BrainCircuit, Check, Youtube, Hash, Tag, Search, Eye, Instagram } from 'lucide-react';
 import PlatformSpecificResultView from './PlatformSpecificResultView';
 
 interface AnalysisResultViewProps {
@@ -156,23 +156,47 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, p
     );
   }
 
-  // RENDER PATH 3: INSTAGRAM CREATE MODE (Simplified)
+    // RENDER PATH 3: INSTAGRAM CREATE MODE (Blueprint)
   if (mode === AppMode.GENERATION && platform === Platform.INSTAGRAM && result.strategy?.caption) {
+    const { caption, altText } = result.strategy;
+
     return (
       <div ref={containerRef} className="space-y-6 animate-fade-in pb-12">
         {(result.virality?.baselineScore !== undefined) && <OptimizationDeltaCard result={result} />}
+        
+        {/* Caption Card */}
         <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-[2rem] backdrop-blur-md">
             <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-500/10 rounded-xl border border-indigo-500/20"><FileText className="w-5 h-5 text-indigo-400" /></div>
-                    <h3 className="text-sm font-black text-white uppercase tracking-wider">INSTAGRAM CAPTION</h3>
+                    <div className="p-2 bg-pink-500/10 rounded-xl border border-pink-500/20"><Instagram className="w-5 h-5 text-pink-400" /></div>
+                    <h3 className="text-sm font-black text-white uppercase tracking-wider">Instagram Blueprint</h3>
                 </div>
-                <CopyButton text={result.strategy.caption} label="COPY BUNDLE" className="text-xs font-bold bg-white/5 px-3 py-2 rounded-lg text-slate-400 hover:text-white" />
+                <CopyButton text={caption} label="COPY BUNDLE" className="text-xs font-bold bg-white/5 px-3 py-2 rounded-lg text-slate-400 hover:text-white" />
             </div>
             <div className="whitespace-pre-wrap text-slate-300 font-sans leading-relaxed text-base p-4 bg-black/30 rounded-xl border border-white/5">
-              {result.strategy.caption}
+              {caption}
             </div>
         </div>
+
+        {/* Alt Text Card - Conditional */}
+        {altText && altText.length > 0 && (
+          <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-[2rem] backdrop-blur-md">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-cyan-500/10 rounded-xl border border-cyan-500/20"><Eye className="w-5 h-5 text-cyan-400" /></div>
+                <h3 className="text-sm font-black text-white uppercase tracking-wider">Alt Text (Hidden SEO Weapon)</h3>
+              </div>
+              <CopyButton text={altText.join('\n\n')} label="COPY ALT TEXT" className="text-xs font-bold bg-white/5 px-3 py-2 rounded-lg text-slate-400 hover:text-white" />
+            </div>
+            <ul className="space-y-2">
+              {altText.map((text, index) => (
+                <li key={index} className="text-sm text-cyan-200 font-mono bg-black/30 p-3 rounded-lg border border-white/5">
+                  <span className="font-bold mr-2 text-slate-500">Image {index + 1}:</span>{text}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     );
   }

@@ -128,6 +128,8 @@ export const analyzeContent = async (
       if (mode === AppMode.GENERATION) {
         promptText += MODE_PROMPTS.GENERATION(platform, config.engagementGoal || [], config.tone || [], config.contentFormat || 'Standard', targeting, config.keywords || '');
       } else if (mode === AppMode.REFINE) {
+        modelName = 'gemini-3-pro-preview';
+        generateConfig.thinkingConfig = { thinkingBudget: 32768 };
         promptText += MODE_PROMPTS.REFINE(config.originalText || '', config.keywords || '', targeting, platform, config.refineFormat, config.tone || []);
       } else if (mode === AppMode.COMPETITOR_SPY) {
         promptText += MODE_PROMPTS.COMPETITOR_SPY(platform, files.length, config.originalText || 'No text', targeting);
@@ -167,7 +169,12 @@ export const analyzeContent = async (
         properties: {
           virality: { type: Type.OBJECT, properties: { score: { type: Type.INTEGER }, baselineScore: { type: Type.INTEGER }, gapAnalysis: { type: Type.STRING }}},
           visualAudit: { type: Type.OBJECT, properties: { summary: { type: Type.STRING }, hookIdentified: { type: Type.STRING }, psychologyCheck: { type: Type.STRING }}},
-          strategy: { type: Type.OBJECT, properties: { headline: { type: Type.STRING }, caption: { type: Type.STRING }, cta: { type: Type.STRING }}},
+          strategy: { type: Type.OBJECT, properties: { 
+            headline: { type: Type.STRING }, 
+            caption: { type: Type.STRING }, 
+            cta: { type: Type.STRING },
+            altText: { type: Type.ARRAY, items: { type: Type.STRING } }
+          }},
           seo: { type: Type.OBJECT, properties: { 
             hiddenKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
             videoTags: { type: Type.ARRAY, items: { type: Type.STRING } },

@@ -104,17 +104,24 @@ export const MODE_PROMPTS = {
   GENERATION: (platform: Platform, goals: string[], tones: string[], format: string, targeting: string, keywords: string) => {
     
     if (platform === Platform.INSTAGRAM) {
+      const isVisualFormat = format === 'Static Post' || format === 'Carousel';
+
+      let altTextInstruction = "";
+      if (isVisualFormat) {
+          altTextInstruction = `3.  **GENERATE ALT TEXT:** Since the format is visual, you MUST generate a descriptive, keyword-rich sentence for the 'strategy.altText' field. This field must be an array of strings. For a 'Static Post', provide one string. For a 'Carousel', provide 2-3 strings. This is the "Hidden SEO Weapon."`;
+      }
+
       return `
       ROLE: Veer SEO Instagram Architect (2025 Specialist)
       ACTIVE MODE: CREATE (Generation) - INSTAGRAM FOCUS
       User-Provided Keywords: ${keywords || 'None provided, derive from context.'}
       Format: ${format}
 
-      **CRITICAL INSTRUCTION:** Your ONLY task is to generate a single, complete, and ready-to-paste caption block that follows the new "Hook-Value-SEO" architecture.
+      **CRITICAL INSTRUCTION:** Your task is to generate a complete Instagram strategy based on the "Hook-Value-SEO" architecture.
       
       **EXECUTION STEPS:**
       1.  **Analyze Input:** Analyze the user-provided media, keywords, and goals.
-      2.  **Architect Caption:** Write a caption that follows this strict three-part structure:
+      2.  **Architect Caption:** Write a complete caption for the 'strategy.caption' field. This single string MUST contain the following three parts:
           *   **The Hook (Phase 1):** A scroll-stopping first sentence (under 125 chars) that includes a primary keyword.
           *   **The Value Body (Phase 2):** Deliver on the hook's promise. Write in natural language but "salt" it with 2-3 secondary semantic keywords. Use line breaks and emojis for scannability. End with a "Call-to-Share" or "Call-to-Save" CTA.
           *   **The SEO Block (Phase 3):** This is the modern replacement for the hashtag cloud. Create a block at the very end formatted EXACTLY like this:
@@ -122,9 +129,13 @@ export const MODE_PROMPTS = {
               .
               .
               #hashtag1 #hashtag2 #hashtag3
-      3.  **Assemble & Score:** Combine all parts into ONE text block for the 'strategy.caption' field. Then provide 'baselineScore' and 'score' (0-100 integers) in the 'virality' object.
+      ${altTextInstruction}
+      4.  **Assemble & Score:** Provide 'baselineScore' and 'score' (0-100 integers) in the 'virality' object.
 
-      **FINAL CHECK:** The 'strategy.caption' must be a single string containing the full Hook, Value Body, SEO Block, and EXACTLY 3 high-relevance hashtags. The response must be pure JSON.
+      **FINAL CHECK:** 
+      - The 'strategy.caption' must be a single string containing the full Hook, Value Body, SEO Block, and EXACTLY 3 high-relevance hashtags. 
+      - ${isVisualFormat ? "The 'strategy.altText' field MUST be present and contain an array of strings." : "The 'strategy.altText' field must be omitted."}
+      - The response must be pure JSON.
       `;
     }
 
@@ -213,48 +224,6 @@ export const MODE_PROMPTS = {
   
   REFINE: (originalText: string, keywords: string, targeting: string, platform: Platform, format: string, tones: string[]) => {
     
-    if (platform === Platform.INSTAGRAM) {
-      return `
-        ROLE: Veer SEO Instagram Architect (2025 Specialist)
-        ACTIVE MODE: REFINE (Mosseri Audit) - INSTAGRAM FOCUS
-        Original Draft: "${originalText}"
-        Context/Keywords: ${keywords}
-        
-        **TASK:** Perform a 2025 "Mosseri Audit" and generate a structured JSON rewrite. This is a deep reasoning task.
-
-        **CRITICAL PROTOCOL: AUDIT-FIRST.**
-        1.  **Analyze Draft:** Scrutinize the original text for these specific 2025 flaws:
-            *   **Hashtag Stuffing:** Does it use more than 3 hashtags?
-            *   **Weak Hook:** Does the first sentence lack a primary keyword or curiosity?
-            *   **Passive CTA:** Does it ask for "Likes" instead of "Saves" or "Shares"?
-            *   **Missing SEO Block:** Is there no [Keyword] block for entity isolation?
-        2.  **Quantify:** Assign an initial 'score' (0-100 integer) to the draft.
-        3.  **Diagnose:** Identify the single biggest 'flaw' and the specific 'fix'.
-        4.  **Rewrite:** Generate the 'refinedContent' object, transforming the draft into the **Hook-Value-SEO architecture**. This means you MUST create the [Square Box] SEO block at the end.
-        5.  **Score Again:** Calculate the new, higher 'score' for the refined version.
-
-        **CRITICAL OUTPUT SCHEMA (Strict JSON):**
-        You MUST populate BOTH the 'refineData' AND the 'virality' objects.
-
-        1. **'refineData' object**:
-           - 'audit.score' [INTEGER]: The 0-100 score of the *original* draft.
-           - 'audit.flaw' [String]: The single biggest reach-killing mistake (e.g., "Hashtag Spam (>3 tags)").
-           - 'audit.fix' [String]: The specific 2025 algorithmic solution you applied (e.g., "Reduced to 3 high-relevance hashtags and added a [Keyword] SEO Block.").
-           - 'audit.explanation' [String]: "Hashtags are now for categorization, not reach. The algorithm prioritizes semantic keywords in the caption and SEO block for discovery via the Interest Graph."
-           - 'refinedContent.headline' [String]: The new, rewritten scroll-stopping hook.
-           - 'refinedContent.body' [String]: The rewritten post body, structured as "Value Body" + "SEO Block".
-           - 'refinedContent.cta' [String]: A "Call-to-Share" or "Call-to-Save".
-           - 'refinedContent.hashtags' [Array of Strings]: An array of EXACTLY 3 relevant hashtags.
-        
-        2. **'virality' object**:
-           - 'baselineScore' [INTEGER]: MUST be the same value as 'refineData.audit.score'.
-           - 'score' [INTEGER]: Your new, calculated score for the *refined* content.
-           - 'gapAnalysis' [String]: A brief, one-sentence explanation of why the score improved based on the 2025 algorithm.
-
-        **FINAL SYSTEM CHECK (NON-NEGOTIABLE):** Your response is a FAILURE if any field is empty or contains placeholders. You must go back and fill all fields.
-      `;
-    }
-
     const tonesInstruction = tones.length > 0 ? `\n**Desired Tones:** You must rewrite the content to reflect these tones: ${tones.join(', ')}.` : '';
     
     return `
@@ -278,6 +247,7 @@ export const MODE_PROMPTS = {
     - **YouTube:** Fix slow intros and boring titles. The CTA must encourage session time. You MUST generate an 'Optimized Title' in the headline field, a full 'Script/Description' in the body field, an array of 10-15 'videoTags', and 3-5 'hashtags'.
     - **Twitter:** Make hooks polarizing. Shorten sentences. You must generate 1-2 hashtags.
     - **Facebook:** Convert ad copy to community-focused text. The CTA must spark discussion. You must generate 1-3 hashtags.
+    - **Instagram:** Fix passive CTAs (to Share/Save), bad hooks, and >3 hashtags. Integrate keywords. Create a 'Hook-Value-SEO' block structure if applicable.
     
     **CRITICAL OUTPUT SCHEMA (Strict JSON):**
     You MUST populate BOTH the 'refineData' AND the 'virality' objects.
@@ -343,10 +313,10 @@ export const MODE_PROMPTS = {
 
     **OUTPUT SCHEMA (Strict JSON String):**
     You MUST output a valid JSON object string with a 'spyReport' key. 'spyReport' is an array of objects. Each object must have:
-    - 'analysis': [String] Why it ranks (The Hook/Trigger).
-    - 'keywords': [String] Detected keywords & hashtags.
-    - 'strategy': [String] The algorithmic hack used.
-    - 'learning': [String] Actionable takeaway for the user.
+      - 'analysis': [String] Why it ranks (The Hook/Trigger).
+      - 'keywords': [String] Detected keywords & hashtags.
+      - 'strategy': [String] The algorithmic hack used.
+      - 'learning': [String] Actionable takeaway for the user.
     `;
   },
 

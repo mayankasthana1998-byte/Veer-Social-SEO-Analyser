@@ -76,6 +76,7 @@ export interface AnalysisResult {
     headline: string;
     caption: string; 
     cta: string;
+    altText?: string[];
   };
   seo?: {
     hiddenKeywords: string[];
