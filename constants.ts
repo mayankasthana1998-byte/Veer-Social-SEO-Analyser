@@ -13,7 +13,7 @@ export const PLATFORM_FORMATS: Record<Platform, string[]> = {
   [Platform.INSTAGRAM]: ['Reel', 'Carousel', 'Static Post', 'Story'],
   [Platform.TIKTOK]: ['Vlog', 'Green Screen', 'Skit', 'Photo Mode'],
   [Platform.YOUTUBE]: ['Shorts', 'Long-form'],
-  [Platform.LINKEDIN]: ['Text Only', 'PDF/Carousel', 'Article', 'Video'],
+  [Platform.LINKEDIN]: ['Text Only', 'Single Image', 'PDF/Carousel', 'Article', 'Video'],
   [Platform.TWITTER]: ['Thread', 'Short Tweet', 'Media Post'],
   [Platform.FACEBOOK]: ['Video', 'Image Post', 'Text Post'],
 };
@@ -180,9 +180,14 @@ export const MODE_PROMPTS = {
     }
 
     let platformStrategy = "";
+    let altTextInstruction = "";
+
      switch (platform) {
       case Platform.LINKEDIN:
         platformStrategy = `**PLATFORM: LINKEDIN (Focus: Knowledge Graph, Consumption Rate)**. Prioritize "save-worthy" evergreen content. The best formats are Document Carousels (9-12 slides) or Vertical Video (<60s) with captions. Weave in semantic keywords and use 3-5 broad hashtags. Use a "Conversation Starter" CTA.`;
+        if (format === 'Single Image' || format === 'PDF/Carousel') {
+          altTextInstruction = `7. **ALT TEXT (SEO):** Generate a descriptive, keyword-rich 'strategy.altText' array (1 item for Single Image, 3-5 for PDF/Carousel) to maximize accessibility and search indexing.`;
+        }
         break;
       case Platform.TIKTOK:
         platformStrategy = `**PLATFORM: TIKTOK (Focus: Search Engine & Entertainment)**. Prioritize Rewatch Rate. Use "Looping Hooks". Spoken Keywords and On-Screen Text are more important than hashtags.`;
@@ -214,6 +219,7 @@ export const MODE_PROMPTS = {
     4.  **SEO & FORMATTING:** Generate hashtags and hidden keywords.
     5.  **SCORE & ANALYZE:** Provide 'baselineScore' and 'score' in the 'virality' object.
     6.  **GROWTH ENGINE:** Provide 3 'optimizationIdeas'.
+    ${altTextInstruction}
 
     Return a JSON object matching the AnalysisResult interface (excluding 'refineData' and 'competitorInsights').
   `},

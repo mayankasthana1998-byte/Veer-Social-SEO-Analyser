@@ -257,7 +257,7 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, p
     );
   }
   
-  // RENDER PATH 5: DEFAULT BLUEPRINT VIEW
+  // RENDER PATH 5: DEFAULT BLUEPRINT VIEW (LinkedIn, Twitter, Facebook, TikTok)
   if (mode === AppMode.GENERATION && result.strategy && result.seo && result.virality) {
      const hashtagsString = result.seo.hashtags?.map(h => `#${h}`).join(' ') || '';
      const fullReportText = `${result.strategy.headline}\n\n${result.strategy.caption}\n\n${result.strategy.cta}\n\n${hashtagsString}`;
@@ -290,6 +290,23 @@ const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, mode, p
                  <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-3 block">Hashtags</span>
                  <p className="text-indigo-400 text-sm font-medium leading-relaxed mt-2">{hashtagsString}</p>
                </div>
+
+               {/* Default Alt Text Card (LinkedIn/Visuals) */}
+               {result.strategy.altText && result.strategy.altText.length > 0 && (
+                 <div className="bg-slate-900/50 rounded-3xl p-6 border border-white/5 mt-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <span className="text-[10px] font-black uppercase text-cyan-400 tracking-widest block">Alt Text (SEO)</span>
+                        <CopyButton text={result.strategy.altText.join('\n\n')} label="COPY" className="text-[10px] font-bold bg-white/5 px-2 py-1 rounded text-slate-400" />
+                    </div>
+                    <ul className="space-y-3">
+                      {result.strategy.altText.map((text, i) => (
+                        <li key={i} className="text-sm text-cyan-200 font-mono bg-black/30 p-3 rounded-lg border border-white/5">
+                           <span className="text-slate-500 font-bold mr-2">Image {i+1}:</span> {text}
+                        </li>
+                      ))}
+                    </ul>
+                 </div>
+               )}
             </div>
           </div>
         </div>
