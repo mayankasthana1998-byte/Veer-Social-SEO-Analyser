@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult, AppMode, Platform, TrendItem } from "../types";
 import { SYSTEM_INSTRUCTION, MODE_PROMPTS, BRAND_GUARD_INSTRUCTION } from "../constants";
@@ -162,21 +163,37 @@ export const analyzeContent = async (
       generateConfig.tools = [{ googleSearch: {} }];
     } else {
       generateConfig.responseMimeType = "application/json";
-      generateConfig.responseSchema = {
-        type: Type.OBJECT,
-        properties: {
-          virality: { type: Type.OBJECT, properties: { score: { type: Type.INTEGER }, baselineScore: { type: Type.INTEGER }, gapAnalysis: { type: Type.STRING }}},
-          visualAudit: { type: Type.OBJECT, properties: { summary: { type: Type.STRING }, hookIdentified: { type: Type.STRING }, psychologyCheck: { type: Type.STRING }}},
+      
+      // Define properties separately to allow strict configuration per mode
+      const baseProperties = {
+          virality: { type: Type.OBJECT, properties: { 
+            score: { type: Type.INTEGER }, 
+            critique: { type: Type.STRING }, // v2.1
+            baselineScore: { type: Type.INTEGER }, 
+            gapAnalysis: { type: Type.STRING }
+          }},
+          psychologicalAudit: { type: Type.OBJECT, properties: { // v2.1
+            visualIndexing: { type: Type.STRING },
+            hookStrategy: { type: Type.STRING },
+            neuroTrigger: { type: Type.STRING }
+          }},
+          thumbnailDirector: { type: Type.OBJECT, properties: { // v2.1
+            visual: { type: Type.STRING },
+            textOverlay: { type: Type.STRING },
+            colorPsychology: { type: Type.STRING }
+          }},
           strategy: { type: Type.OBJECT, properties: { 
             headline: { type: Type.STRING }, 
             caption: { type: Type.STRING }, 
             cta: { type: Type.STRING },
-            altText: { type: Type.ARRAY, items: { type: Type.STRING } }
+            altText: { type: Type.ARRAY, items: { type: Type.STRING } } // Backwards compat
           }},
           seo: { type: Type.OBJECT, properties: { 
+            keywords: { type: Type.ARRAY, items: { type: Type.STRING } },
             hiddenKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
             videoTags: { type: Type.ARRAY, items: { type: Type.STRING } },
-            hashtags: { type: Type.ARRAY, items: { type: Type.STRING } } 
+            hashtags: { type: Type.ARRAY, items: { type: Type.STRING } },
+            altText: { type: Type.ARRAY, items: { type: Type.STRING } } // v2.1 New Location
           }},
           refineData: {
             type: Type.OBJECT, properties: {
@@ -186,13 +203,37 @@ export const analyzeContent = async (
                 body: { type: Type.STRING }, 
                 cta: { type: Type.STRING }, 
                 hashtags: { type: Type.ARRAY, items: { type: Type.STRING } },
-                videoTags: { type: Type.ARRAY, items: { type: Type.STRING } }
+                videoTags: { type: Type.ARRAY, items: { type: Type.STRING } },
+                hiddenKeywords: { type: Type.ARRAY, items: { type: Type.STRING } }
               }}
             }
           },
           optimizationIdeas: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, idea: { type: Type.STRING } } } }
-        }
       };
+
+      if (mode === AppMode.GENERATION) {
+          // Strict schema for Generation Mode
+          const schema: any = {
+             type: Type.OBJECT,
+             properties: baseProperties,
+             required: ["strategy", "seo", "virality", "psychologicalAudit"]
+          };
+          // Force SEO fields to be generated
+          schema.properties.seo.required = ["keywords", "hashtags"];
+          generateConfig.responseSchema = schema;
+      } else if (mode === AppMode.REFINE) {
+          // Strict schema for Refine Mode
+          generateConfig.responseSchema = {
+             type: Type.OBJECT,
+             properties: baseProperties,
+             required: ["refineData", "virality"]
+          };
+      } else {
+         generateConfig.responseSchema = {
+            type: Type.OBJECT,
+            properties: baseProperties
+         };
+      }
     }
 
     const response = await ai.models.generateContent({

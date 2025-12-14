@@ -1,3 +1,4 @@
+
 export enum AppMode {
   GENERATION = 'GENERATION',
   REFINE = 'REFINE',
@@ -53,37 +54,57 @@ export interface RefineData {
     cta: string;
     hashtags: string[]; // Use array for perfect formatting
     videoTags?: string[]; // YouTube specific
+    hiddenKeywords?: string[]; // Instagram SEO specific
   };
+}
+
+export interface ThumbnailDirector {
+  visual: string;
+  textOverlay: string;
+  colorPsychology: string;
 }
 
 export interface AnalysisResult {
   // Shared
   virality?: {
     score: number;
+    critique?: string; // New v2.1 field
     baselineScore?: number;
-    gapAnalysis: string;
+    gapAnalysis?: string;
     trendDetected?: string;
     vibe?: string;
   };
   
-  // Mode A: Generation Data
+  // Mode A: Generation Data (v2.1 Schema)
+  psychologicalAudit?: {
+    visualIndexing: string;
+    hookStrategy: string;
+    neuroTrigger: string;
+  };
+  
+  thumbnailDirector?: ThumbnailDirector; // Video Only
+
+  strategy?: {
+    headline: string; // Overlay Text
+    caption: string; 
+    cta: string;
+  };
+
+  seo?: {
+    altText?: string[]; // Moved to SEO object in v2.1
+    keywords?: string[]; // General keywords list
+    hiddenKeywords?: string[]; // Instagram specific
+    videoTags?: string[]; // YouTube Specific
+    hashtags: string[]; 
+  };
+  
+  // Backwards compatibility for UI safety
   visualAudit?: {
     summary: string;
     hookIdentified: HookType;
     psychologyCheck: string;
   };
-  strategy?: {
-    headline: string;
-    caption: string; 
-    cta: string;
-    altText?: string[];
-  };
-  seo?: {
-    hiddenKeywords: string[];
-    videoTags?: string[]; // YouTube Specific
-    hashtags: string[]; // Simplified from object to array
-  };
-  
+
   // Mode B: Refine Data (New Strict Structure)
   refineData?: RefineData;
 
